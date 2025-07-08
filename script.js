@@ -809,25 +809,3 @@ function gameLoop() {
 updateDialogue();
 gameLoop();
 
-const debugLog = document.getElementById('debug-log');
-const debugToggle = document.getElementById('debug-toggle');
-if (debugToggle) {
-  debugToggle.addEventListener('click', () => {
-    if (!debugLog) return;
-    debugLog.style.display = debugLog.style.display === 'block' ? 'none' : 'block';
-  });
-}
-
-function logDebug(msg) {
-  if (!debugLog) return;
-  const entry = document.createElement('div');
-  entry.textContent = msg;
-  debugLog.appendChild(entry);
-  if (debugLog.children.length > 20) {
-    debugLog.removeChild(debugLog.firstChild);
-  }
-}
-
-window.addEventListener('error', (e) => {
-  logDebug(`ERR: ${e.message} (${e.filename}:${e.lineno})`);
-});

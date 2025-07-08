@@ -95,6 +95,8 @@ const cats = [
     y: 120,
     vx: 0.5,
     vy: 0.5,
+    w: 8,
+    h: 8,
     color: 'orange',
     name: 'Kitty',
     dialogue: 'Kitty - MeROWWW'
@@ -105,6 +107,8 @@ const cats = [
     vx: -0.5,
     vy: 0.5,
     spotted: true,
+    w: 8,
+    h: 8,
     name: 'Cintas',
     dialogue: 'Cintas - ROWRR, meowr :P'
   },
@@ -125,7 +129,7 @@ const GATE_OPEN_TIME = 60;
 // Position the flower slightly to the left of the house
 const flower = { x: house.x - 20, y: 120, collected: false };
 // Daniela starts near the road but a bit away from the intersection
-const daniela = { x: 180, y: 150, color: "#ff69b4" };
+const daniela = { x: 180, y: 150, w: 10, h: 10, color: "#ff69b4" };
 const hearts = [];
 let lastHeartTime = 0;
 
@@ -137,8 +141,19 @@ let messageTimer = 0;
 const messageDelay = 2;
 let isTalking = false;
 const talkDistance = 30;
+let talkTarget = null;
 let dx = 0, dy = 0;
 let flowerPopup = document.getElementById("flower-popup");
+
+function exitIndoor() {
+  scene.current = 'outdoor';
+  player.x = door.x + door.w / 2 - player.w / 2;
+  player.y = door.y + door.h + 2;
+  isTalking = false;
+  talkTarget = null;
+  showTypedMessage = '';
+  showMessage = '';
+}
 
 // === SOUND ON TAP ===
 document.getElementById("startScreen").addEventListener("click", () => {
@@ -280,43 +295,19 @@ function drawOutdoorWorld() {
   }
 
   ctx.fillStyle = daniela.color;
-  ctx.fillRect(daniela.x, daniela.y, 10, 10);
-
-  if (isTalking && showTypedMessage) {
-    ctx.font = "12px monospace";
-    ctx.textBaseline = "top";
-    const lineHeight = 14;
-    const padding = 4;
-    const lines = getWrappedLines(ctx, showTypedMessage, 150);
-    let maxLineWidth = 0;
-    for (const l of lines) {
-      maxLineWidth = Math.max(maxLineWidth, ctx.measureText(l).width);
-    }
-    const boxWidth = maxLineWidth + padding * 2;
-    const boxHeight = lineHeight * lines.length + padding * 2;
-    const textX = daniela.x - boxWidth / 2;
-    const textY = daniela.y - boxHeight - 10;
-    ctx.fillStyle = "black";
-    ctx.fillRect(textX, textY, boxWidth, boxHeight);
-    ctx.fillStyle = "white";
-    let y = textY + padding;
-    for (const l of lines) {
-      ctx.fillText(l, textX + padding, y);
-      y += lineHeight;
-    }
-  }
+  ctx.fillRect(daniela.x, daniela.y, daniela.w, daniela.h);
 }
 
 function drawCat(cat) {
   if (cat.spotted) {
     ctx.fillStyle = 'white';
-    ctx.fillRect(cat.x, cat.y, 8, 8);
+    ctx.fillRect(cat.x, cat.y, cat.w, cat.h);
     ctx.fillStyle = 'black';
     ctx.fillRect(cat.x + 1, cat.y + 1, 2, 2);
     ctx.fillRect(cat.x + 4, cat.y + 3, 2, 2);
   } else {
     ctx.fillStyle = cat.color;
-    ctx.fillRect(cat.x, cat.y, 8, 8);
+    ctx.fillRect(cat.x, cat.y, cat.w, cat.h);
   }
 }
 
@@ -324,8 +315,8 @@ function updateCats() {
   for (const c of cats) {
     c.x += c.vx;
     c.y += c.vy;
-    if (c.x < 0 || c.x > canvas.width - 8) c.vx *= -1;
-    if (c.y < 0 || c.y > canvas.height - 8) c.vy *= -1;
+    if (c.x < 0 || c.x > canvas.width - c.w) c.vx *= -1;
+    if (c.y < 0 || c.y > canvas.height - c.h) c.vy *= -1;
     if (Math.random() < 0.02) {
       c.vx = (Math.random() - 0.5) * 1;
       c.vy = (Math.random() - 0.5) * 1;
@@ -337,6 +328,33 @@ function drawIndoorWorld() {
   ctx.drawImage(girlHomeImg, 0, 0, canvas.width, canvas.height);
   updateCats();
   for (const c of cats) drawCat(c);
+}
+
+function drawDialogueBubble() {
+  if (!(isTalking && showTypedMessage && talkTarget)) return;
+  ctx.font = "12px monospace";
+  ctx.textBaseline = "top";
+  const lineHeight = 14;
+  const padding = 4;
+  const lines = getWrappedLines(ctx, showTypedMessage, 150);
+  let maxLineWidth = 0;
+  for (const l of lines) {
+    maxLineWidth = Math.max(maxLineWidth, ctx.measureText(l).width);
+  }
+  const boxWidth = maxLineWidth + padding * 2;
+  const boxHeight = lineHeight * lines.length + padding * 2;
+  const centerX = talkTarget.x + (talkTarget.w || 0) / 2;
+  const textX = centerX - boxWidth / 2;
+  const baseY = talkTarget.y - (talkTarget.h || 0);
+  const textY = baseY - boxHeight - 4;
+  ctx.fillStyle = "black";
+  ctx.fillRect(textX, textY, boxWidth, boxHeight);
+  ctx.fillStyle = "white";
+  let y = textY + padding;
+  for (const l of lines) {
+    ctx.fillText(l, textX + padding, y);
+    y += lineHeight;
+  }
 }
 
 // === DIALOGUE LOGIC ===
@@ -367,14 +385,10 @@ function checkInteractions() {
         player.y <= 0 ||
         player.x + player.w >= canvas.width ||
         player.y + player.h >= canvas.height) {
-      scene.current = 'outdoor';
-      player.x = door.x + door.w / 2 - player.w / 2;
-      player.y = door.y + door.h + 2;
+      exitIndoor();
+      return;
     }
-    return;
-  }
-
-  if (scene.current === 'outdoor') {
+  } else {
     if (player.x < door.x + door.w &&
         player.x + player.w > door.x &&
         player.y < door.y + door.h &&
@@ -382,42 +396,47 @@ function checkInteractions() {
       scene.current = 'indoor';
       player.x = canvas.width / 2 - player.w / 2;
       player.y = canvas.height - 20;
+      isTalking = false;
+      talkTarget = null;
+      showTypedMessage = '';
       return;
     }
-  }
-
-  if (!flower.collected &&
-      player.x < flower.x + 5 &&
-      player.x + player.w > flower.x &&
-      player.y < flower.y + 5 &&
-      player.y + player.h > flower.y) {
-    flower.collected = true;
-    const pickup = document.getElementById("pickup-sound");
-    if (pickup) {
-      pickup.currentTime = 0;
-      pickup.play().catch(() => {});
+    if (!flower.collected &&
+        player.x < flower.x + 5 &&
+        player.x + player.w > flower.x &&
+        player.y < flower.y + 5 &&
+        player.y + player.h > flower.y) {
+      flower.collected = true;
+      const pickup = document.getElementById("pickup-sound");
+      if (pickup) {
+        pickup.currentTime = 0;
+        pickup.play().catch(() => {});
+      }
+      flowerPopup.style.opacity = 1;
+      setTimeout(() => flowerPopup.style.opacity = 0, 2000);
+      updateDialogue();
     }
-    flowerPopup.style.opacity = 1;
-    setTimeout(() => flowerPopup.style.opacity = 0, 2000);
-    updateDialogue();
   }
 
   let talked = false;
-  for (const cat of cats) {
-    const cd = Math.hypot(player.x - cat.x, player.y - cat.y);
-    if (cd < talkDistance) {
-      if (!isTalking || showMessage !== cat.dialogue) {
-        showMessage = cat.dialogue;
-        showTypedMessage = '';
-        messageIndex = 0;
+  if (scene.current === 'indoor') {
+    for (const cat of cats) {
+      const cd = Math.hypot(player.x - cat.x, player.y - cat.y);
+      if (cd < talkDistance) {
+        if (!isTalking || showMessage !== cat.dialogue) {
+          showMessage = cat.dialogue;
+          showTypedMessage = '';
+          messageIndex = 0;
+        }
+        talkTarget = cat;
+        isTalking = true;
+        talked = true;
+        break;
       }
-      isTalking = true;
-      talked = true;
-      break;
     }
   }
 
-  if (!talked) {
+  if (!talked && scene.current === 'outdoor') {
     const dist = Math.hypot(player.x - daniela.x, player.y - daniela.y);
     const danielaDialogue = flower.collected
       ? "Luke - I brought you a flower cutie!\nDaniela - OMG THANK YOU SO MUCH!!!!"
@@ -426,61 +445,64 @@ function checkInteractions() {
       if (!isTalking || showMessage !== danielaDialogue) {
         updateDialogue();
       }
+      talkTarget = daniela;
       isTalking = true;
-    } else {
-      if (isTalking) {
-        showTypedMessage = '';
-        messageIndex = 0;
-      }
-      isTalking = false;
+      talked = true;
     }
   }
 
-  // Collision with house
-  if (player.x < house.x + house.w &&
-      player.x + player.w > house.x &&
-      player.y < house.y + house.h &&
-      player.y + player.h > house.y) {
-    player.x -= dx;
-    player.y -= dy;
+  if (!talked) {
+    if (isTalking) {
+      showTypedMessage = '';
+      messageIndex = 0;
+    }
+    isTalking = false;
+    talkTarget = null;
   }
 
-  // gate timer
-  if (gateTimer > 0) {
-    gateTimer--;
-    if (gateTimer === 0) gateOpen = false;
-  }
-
-  const gateRect = { x: gate.x, y: gate.y - gate.h, w: gate.w, h: gate.h };
-
-  // open gate when player touches it
-  if (!gateOpen &&
-      player.x < gateRect.x + gateRect.w &&
-      player.x + player.w > gateRect.x &&
-      player.y < gateRect.y + gateRect.h &&
-      player.y + player.h > gateRect.y) {
-    gateOpen = true;
-    gateTimer = GATE_OPEN_TIME;
-  }
-
-  // fence collisions
-  const fenceRects = [
-    { x: fence.x, y: fence.y, w: fence.w, h: 2 },
-    { x: fence.x, y: fence.y, w: 2, h: fence.h },
-    { x: fence.x + fence.w - 2, y: fence.y, w: 2, h: fence.h },
-    { x: fence.x, y: fence.y + fence.h - 2, w: gate.x - fence.x, h: 2 },
-    { x: gate.x + gate.w, y: fence.y + fence.h - 2, w: fence.x + fence.w - (gate.x + gate.w), h: 2 },
-  ];
-  if (!gateOpen) {
-    fenceRects.push(gateRect);
-  }
-  for (const r of fenceRects) {
-    if (player.x < r.x + r.w &&
-        player.x + player.w > r.x &&
-        player.y < r.y + r.h &&
-        player.y + player.h > r.y) {
+  if (scene.current === 'outdoor') {
+    if (player.x < house.x + house.w &&
+        player.x + player.w > house.x &&
+        player.y < house.y + house.h &&
+        player.y + player.h > house.y) {
       player.x -= dx;
       player.y -= dy;
+    }
+
+    if (gateTimer > 0) {
+      gateTimer--;
+      if (gateTimer === 0) gateOpen = false;
+    }
+
+    const gateRect = { x: gate.x, y: gate.y - gate.h, w: gate.w, h: gate.h };
+
+    if (!gateOpen &&
+        player.x < gateRect.x + gateRect.w &&
+        player.x + player.w > gateRect.x &&
+        player.y < gateRect.y + gateRect.h &&
+        player.y + player.h > gateRect.y) {
+      gateOpen = true;
+      gateTimer = GATE_OPEN_TIME;
+    }
+
+    const fenceRects = [
+      { x: fence.x, y: fence.y, w: fence.w, h: 2 },
+      { x: fence.x, y: fence.y, w: 2, h: fence.h },
+      { x: fence.x + fence.w - 2, y: fence.y, w: 2, h: fence.h },
+      { x: fence.x, y: fence.y + fence.h - 2, w: gate.x - fence.x, h: 2 },
+      { x: gate.x + gate.w, y: fence.y + fence.h - 2, w: fence.x + fence.w - (gate.x + gate.w), h: 2 },
+    ];
+    if (!gateOpen) {
+      fenceRects.push(gateRect);
+    }
+    for (const r of fenceRects) {
+      if (player.x < r.x + r.w &&
+          player.x + player.w > r.x &&
+          player.y < r.y + r.h &&
+          player.y + player.h > r.y) {
+        player.x -= dx;
+        player.y -= dy;
+      }
     }
   }
 }
@@ -494,17 +516,19 @@ function gameLoop() {
   } else {
     drawIndoorWorld();
   }
-  updateMessageTyping();
-  checkInteractions();
-  updateMovement();
 
+  updateMovement();
   player.x += dx;
   player.y += dy;
   player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
   player.y = Math.max(0, Math.min(canvas.height - player.h, player.y));
 
+  updateMessageTyping();
+  checkInteractions();
+
   ctx.fillStyle = "blue";
   ctx.fillRect(player.x, player.y, player.w, player.h);
+  drawDialogueBubble();
 
   requestAnimationFrame(gameLoop);
 }

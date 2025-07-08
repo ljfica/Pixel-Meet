@@ -126,12 +126,52 @@ const gate = {
 let gateOpen = false;
 let gateTimer = 0;
 const GATE_OPEN_TIME = 60;
-// Position the flower slightly to the left of the house
-const flower = { x: house.x - 20, y: 120, collected: false };
+// Flower near the top left of the house
+const flower = {
+  x: fence.x + 2 * player.w,
+  y: fence.y + player.h,
+  collected: false
+};
 // Daniela starts near the road but a bit away from the intersection
 const daniela = { x: 180, y: 150, w: 10, h: 10, color: "#ff69b4" };
 const hearts = [];
 let lastHeartTime = 0;
+
+const decorations = [];
+function generateDecorations() {
+  const verticalRoad = { x: 140, y: 0, w: 20, h: 200 };
+  const horizontalRoad = { x: 0, y: 140, w: 300, h: 20 };
+  const pathW = 6;
+  const walkway = {
+    x: house.x + house.w / 2 - pathW / 2,
+    y: house.y + house.h,
+    w: pathW,
+    h: 140 - (house.y + house.h)
+  };
+  function collides(r, x, y, w, h) {
+    return x < r.x + r.w && x + w > r.x && y < r.y + r.h && y + h > r.y;
+  }
+  function forbidden(x, y, w, h) {
+    if (collides(verticalRoad, x, y, w, h)) return true;
+    if (collides(horizontalRoad, x, y, w, h)) return true;
+    if (collides(walkway, x, y, w, h)) return true;
+    if (collides(fence, x, y, w, h)) return true;
+    return false;
+  }
+  const types = ['tree', 'rock'];
+  for (let i = 0; i < 10; i++) {
+    const type = types[Math.floor(Math.random() * types.length)];
+    const size = type === 'tree' ? { w: 8, h: 12 } : { w: 6, h: 4 };
+    let x, y, attempts = 0;
+    do {
+      x = Math.random() * (canvas.width - size.w);
+      y = Math.random() * (canvas.height - size.h);
+      attempts++;
+    } while (forbidden(x, y, size.w, size.h) && attempts < 100);
+    decorations.push({ type, x, y, w: size.w, h: size.h });
+  }
+}
+generateDecorations();
 
 const HEART_SPAWN_INTERVAL = 500;
 let showMessage = '';
@@ -147,6 +187,11 @@ let flowerPopup = document.getElementById("flower-popup");
 
 function exitIndoor() {
   scene.current = 'outdoor';
+  const doorAudio = document.getElementById('door-sound');
+  if (doorAudio) {
+    doorAudio.currentTime = 0;
+    doorAudio.play().catch(() => {});
+  }
   player.x = door.x + door.w / 2 - player.w / 2;
   player.y = door.y + door.h + 2;
   isTalking = false;
@@ -285,6 +330,18 @@ function drawOutdoorWorld() {
 
   drawFence();
 
+  for (const d of decorations) {
+    if (d.type === 'tree') {
+      ctx.fillStyle = '#228B22';
+      ctx.fillRect(d.x, d.y, d.w, d.h - 2);
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(d.x + d.w / 2 - 1, d.y + d.h - 2, 2, 2);
+    } else {
+      ctx.fillStyle = '#888';
+      ctx.fillRect(d.x, d.y, d.w, d.h);
+    }
+  }
+
   drawHouse();
 
   updateAndDrawSmoke();
@@ -393,6 +450,11 @@ function checkInteractions() {
         player.x + player.w > door.x &&
         player.y < door.y + door.h &&
         player.y + player.h > door.y) {
+      const doorAudio = document.getElementById('door-sound');
+      if (doorAudio) {
+        doorAudio.currentTime = 0;
+        doorAudio.play().catch(() => {});
+      }
       scene.current = 'indoor';
       player.x = canvas.width / 2 - player.w / 2;
       player.y = canvas.height - 20;

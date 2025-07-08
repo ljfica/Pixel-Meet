@@ -18,6 +18,13 @@
       max-width: 100%;
       aspect-ratio: 3 / 2;
     }
+
+@media (min-width: 700px) {
+  canvas {
+    width: 100vmin;
+    height: calc(100vmin * 2 / 3);
+  }
+}
     #controls {
       display: flex;
       justify-content: center;

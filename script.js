@@ -21,20 +21,24 @@ function updateMovement() {
 
 
 function wrapText(context, text, x, y, maxWidth, lineHeight) {
-  const words = text.split(' ');
-  let line = '';
-  for (let i = 0; i < words.length; i++) {
-    const testLine = line + words[i] + ' ';
-    const metrics = context.measureText(testLine);
-    if (metrics.width > maxWidth && i > 0) {
-      context.fillText(line, x, y);
-      line = words[i] + ' ';
-      y += lineHeight;
-    } else {
-      line = testLine;
+  const lines = text.split('\n');
+  for (let j = 0; j < lines.length; j++) {
+    const words = lines[j].split(' ');
+    let line = '';
+    for (let i = 0; i < words.length; i++) {
+      const testLine = line + words[i] + ' ';
+      const metrics = context.measureText(testLine);
+      if (metrics.width > maxWidth && i > 0) {
+        context.fillText(line, x, y);
+        line = words[i] + ' ';
+        y += lineHeight;
+      } else {
+        line = testLine;
+      }
     }
+    context.fillText(line, x, y);
+    y += lineHeight;
   }
-  context.fillText(line, x, y);
 }
 
 
@@ -74,6 +78,8 @@ let showTypedMessage = '';
 let messageIndex = 0;
 let messageTimer = 0;
 const messageDelay = 2;
+let isTalking = false;
+const talkDistance = 30;
 let dx = 0, dy = 0;
 let flowerPopup = document.getElementById("flower-popup");
 
@@ -135,17 +141,25 @@ function drawWorldExtras() {
   ctx.fillRect(daniela.x, daniela.y, 10, 10);
 
   // Dialogue
-  ctx.fillStyle = "white";
-  ctx.font = "12px monospace";
-  wrapText(ctx, showTypedMessage, daniela.x - 40, daniela.y - 10, 120, 14);
+  if (isTalking && showTypedMessage) {
+    ctx.font = "12px monospace";
+    const lineHeight = 14;
+    const lines = showTypedMessage.split("\n");
+    const textX = daniela.x - 40;
+    const textY = daniela.y - lineHeight * lines.length - 10;
+    ctx.fillStyle = "black";
+    ctx.fillRect(textX - 4, textY - 2, 128, lineHeight * lines.length + 8);
+    ctx.fillStyle = "white";
+    wrapText(ctx, showTypedMessage, textX, textY + lineHeight, 120, lineHeight);
+  }
 }
 
 // === DIALOGUE LOGIC ===
 function updateDialogue() {
   if (flower.collected) {
-    showMessage = "Thank you for the flower!";
+    showMessage = "Luke (blue) - I brought you a flower cutie!\nDaniela (pink) - OMG THANK YOU SO MUCH!!!!";
   } else {
-    showMessage = "Have you seen a flower around here?";
+    showMessage = "Daniela (pink) - Hi cutey!\nLuke (blue) - You're the cutey!!!";
   }
   messageIndex = 0;
   showTypedMessage = '';
@@ -153,6 +167,7 @@ function updateDialogue() {
 }
 
 function updateMessageTyping() {
+  if (!isTalking) return;
   if (messageIndex < showMessage.length) {
     if (messageTimer++ % messageDelay === 0) {
       showTypedMessage += showMessage[messageIndex++];
@@ -173,6 +188,18 @@ function checkInteractions() {
     updateDialogue();
   }
 
+  const dist = Math.hypot(player.x - daniela.x, player.y - daniela.y);
+  if (dist < talkDistance) {
+    if (!isTalking) updateDialogue();
+    isTalking = true;
+  } else {
+    if (isTalking) {
+      showTypedMessage = '';
+      messageIndex = 0;
+    }
+    isTalking = false;
+  }
+
   if (player.x < house.x + house.w &&
       player.x + player.w > house.x &&
       player.y < house.y + house.h &&
@@ -186,8 +213,8 @@ function checkInteractions() {
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawWorldExtras();
-  updateMessageTyping();
   checkInteractions();
+  updateMessageTyping();
 
     updateMovement();
   // Update position

@@ -126,12 +126,12 @@ const gate = {
 let gateOpen = false;
 let gateTimer = 0;
 const GATE_OPEN_TIME = 60;
-// Flower near the top left of the house, adjusted position
+// Flower near the fence's corner so it can be collected easily
 const flower = {
-  // moved 8 squares left and 7 squares up from the
-  // original location to be closer to the fence
-  x: fence.x + 2 * player.w - 8,
-  y: fence.y + player.h - 7,
+  // placed a few squares left/up from the fence to keep it
+  // away from the house roof
+  x: fence.x - 3 * player.w,
+  y: Math.max(fence.y - 2 * player.h, 0),
   collected: false
 };
 // Daniela starts near the road but a bit away from the intersection

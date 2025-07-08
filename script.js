@@ -90,8 +90,24 @@ const girlHomeImg = new Image();
 girlHomeImg.src = 'assets/GIRL HOME.png';
 
 const cats = [
-  { x: 140, y: 120, vx: 0.5, vy: 0.5, color: 'orange' },
-  { x: 160, y: 120, vx: -0.5, vy: 0.5, spotted: true },
+  {
+    x: 140,
+    y: 120,
+    vx: 0.5,
+    vy: 0.5,
+    color: 'orange',
+    name: 'Kitty',
+    dialogue: 'Kitty - MeROWWW'
+  },
+  {
+    x: 160,
+    y: 120,
+    vx: -0.5,
+    vy: 0.5,
+    spotted: true,
+    name: 'Cintas',
+    dialogue: 'Cintas - ROWRR, meowr :P'
+  },
 ];
 const smokeParticles = [];
 let lastSmokeTime = 0;
@@ -346,6 +362,18 @@ function updateMessageTyping() {
 
 // === INTERACTION ===
 function checkInteractions() {
+  if (scene.current === 'indoor') {
+    if (player.x <= 0 ||
+        player.y <= 0 ||
+        player.x + player.w >= canvas.width ||
+        player.y + player.h >= canvas.height) {
+      scene.current = 'outdoor';
+      player.x = door.x + door.w / 2 - player.w / 2;
+      player.y = door.y + door.h + 2;
+    }
+    return;
+  }
+
   if (scene.current === 'outdoor') {
     if (player.x < door.x + door.w &&
         player.x + player.w > door.x &&
@@ -357,7 +385,6 @@ function checkInteractions() {
       return;
     }
   }
-  if (scene.current !== 'outdoor') return;
 
   if (!flower.collected &&
       player.x < flower.x + 5 &&
@@ -375,16 +402,38 @@ function checkInteractions() {
     updateDialogue();
   }
 
-  const dist = Math.hypot(player.x - daniela.x, player.y - daniela.y);
-  if (dist < talkDistance) {
-    if (!isTalking) updateDialogue();
-    isTalking = true;
-  } else {
-    if (isTalking) {
-      showTypedMessage = '';
-      messageIndex = 0;
+  let talked = false;
+  for (const cat of cats) {
+    const cd = Math.hypot(player.x - cat.x, player.y - cat.y);
+    if (cd < talkDistance) {
+      if (!isTalking || showMessage !== cat.dialogue) {
+        showMessage = cat.dialogue;
+        showTypedMessage = '';
+        messageIndex = 0;
+      }
+      isTalking = true;
+      talked = true;
+      break;
     }
-    isTalking = false;
+  }
+
+  if (!talked) {
+    const dist = Math.hypot(player.x - daniela.x, player.y - daniela.y);
+    const danielaDialogue = flower.collected
+      ? "Luke - I brought you a flower cutie!\nDaniela - OMG THANK YOU SO MUCH!!!!"
+      : "Daniela - Hi cutey!\nLuke - You're the cutey!!!";
+    if (dist < talkDistance) {
+      if (!isTalking || showMessage !== danielaDialogue) {
+        updateDialogue();
+      }
+      isTalking = true;
+    } else {
+      if (isTalking) {
+        showTypedMessage = '';
+        messageIndex = 0;
+      }
+      isTalking = false;
+    }
   }
 
   // Collision with house

@@ -130,7 +130,7 @@ const GATE_OPEN_TIME = 60;
 const flower = {
   // moved 8 squares left and 7 squares up from the
   // original location to be closer to the fence
-  x: fence.x + 2 * player.w - 8,
+  x: fence.x - 5 * player.w - 8,
   y: fence.y + player.h - 7,
   collected: false
 };

@@ -76,7 +76,9 @@ const daniela = { x: 250, y: 150 };
 // Heart particle effects
 const hearts = [];
 let lastHeartTime = 0;
-const HEART_SPAWN_INTERVAL = 3000; // ms
+
+const HEART_SPAWN_INTERVAL = 500; // ms
+
 let showMessage = '';
 let showTypedMessage = '';
 let messageIndex = 0;
@@ -252,10 +254,10 @@ function checkInteractions() {
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawWorldExtras();
-  
-updateAndDrawHearts();
-updateMessageTyping();
-  
+
+  updateAndDrawHearts();
+  updateMessageTyping();
+
   checkInteractions();
   updateMessageTyping();
 

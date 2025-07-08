@@ -136,6 +136,18 @@ const flower = {
 };
 // Daniela starts near the road but a bit away from the intersection
 const daniela = { x: 180, y: 150, w: 10, h: 10, color: "#ff69b4" };
+// Hunter NPC in bottom left quadrant between the roads
+const hunter = {
+  x: 60,
+  y: 170,
+  w: 10,
+  h: 10,
+  color: "#77553a",
+  dialogue: "Hunter - Best stay 'way from my deer boy."
+};
+let hunterFollowStart = null;
+let hunterFollowActive = false;
+let hunterFollowEnd = 0;
 const hearts = [];
 let lastHeartTime = 0;
 
@@ -429,6 +441,9 @@ function drawOutdoorWorld() {
     ctx.fillRect(flower.x, flower.y, 5, 5);
   }
 
+  ctx.fillStyle = hunter.color;
+  ctx.fillRect(hunter.x, hunter.y, hunter.w, hunter.h);
+
   ctx.fillStyle = daniela.color;
   ctx.fillRect(daniela.x, daniela.y, daniela.w, daniela.h);
 }
@@ -509,6 +524,34 @@ function drawForgotFlowersBubble() {
   const centerX = player.x + player.w / 2;
   const textX = centerX - boxWidth / 2;
   const baseY = player.y;
+  const textY = baseY - boxHeight - 4;
+  ctx.fillStyle = 'black';
+  ctx.fillRect(textX, textY, boxWidth, boxHeight);
+  ctx.fillStyle = 'white';
+  let y = textY + padding;
+  for (const l of lines) {
+    ctx.fillText(l, textX + padding, y);
+    y += lineHeight;
+  }
+}
+
+function drawHunterFollowupBubble() {
+  if (!hunterFollowActive) return;
+  const message = "Hunter - That's what I thought hehe.";
+  ctx.font = '12px monospace';
+  ctx.textBaseline = 'top';
+  const lineHeight = 14;
+  const padding = 4;
+  const lines = getWrappedLines(ctx, message, 150);
+  let maxLineWidth = 0;
+  for (const l of lines) {
+    maxLineWidth = Math.max(maxLineWidth, ctx.measureText(l).width);
+  }
+  const boxWidth = maxLineWidth + padding * 2;
+  const boxHeight = lineHeight * lines.length + padding * 2;
+  const centerX = hunter.x + hunter.w / 2;
+  const textX = centerX - boxWidth / 2;
+  const baseY = hunter.y;
   const textY = baseY - boxHeight - 4;
   ctx.fillStyle = 'black';
   ctx.fillRect(textX, textY, boxWidth, boxHeight);
@@ -606,6 +649,21 @@ function checkInteractions() {
   }
 
   if (!talked && scene.current === 'outdoor') {
+    const hd = Math.hypot(player.x - hunter.x, player.y - hunter.y);
+    if (hd < talkDistance) {
+      if (!isTalking || showMessage !== hunter.dialogue) {
+        showMessage = hunter.dialogue;
+        showTypedMessage = '';
+        messageIndex = 0;
+      }
+      talkTarget = hunter;
+      isTalking = true;
+      talked = true;
+      hunterFollowStart = null;
+    }
+  }
+
+  if (!talked && scene.current === 'outdoor') {
     const dist = Math.hypot(player.x - daniela.x, player.y - daniela.y);
     const danielaDialogue = flower.collected
       ? "Luke - I brought you a flower cutie!\nDaniela - OMG THANK YOU SO MUCH!!!!"
@@ -625,6 +683,9 @@ function checkInteractions() {
 
   if (!talked) {
     if (isTalking) {
+      if (talkTarget === hunter) {
+        hunterFollowStart = Date.now();
+      }
       showTypedMessage = '';
       messageIndex = 0;
     }
@@ -718,10 +779,20 @@ function gameLoop() {
     forgotFlowersActive = false;
   }
 
+  if (hunterFollowStart && now - hunterFollowStart >= 2000) {
+    hunterFollowActive = true;
+    hunterFollowEnd = now + 2000;
+    hunterFollowStart = null;
+  }
+  if (hunterFollowActive && now >= hunterFollowEnd) {
+    hunterFollowActive = false;
+  }
+
   ctx.fillStyle = "blue";
   ctx.fillRect(player.x, player.y, player.w, player.h);
   drawDialogueBubble();
   drawForgotFlowersBubble();
+  drawHunterFollowupBubble();
 
   requestAnimationFrame(gameLoop);
 }

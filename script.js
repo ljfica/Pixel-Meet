@@ -227,6 +227,11 @@ function checkInteractions() {
       player.y < flower.y + 5 &&
       player.y + player.h > flower.y) {
     flower.collected = true;
+    const pickup = document.getElementById("pickup-sound");
+    if (pickup) {
+      pickup.currentTime = 0;
+      pickup.play().catch(() => {});
+    }
     flowerPopup.style.opacity = 1;
     setTimeout(() => flowerPopup.style.opacity = 0, 2000);
     updateDialogue();

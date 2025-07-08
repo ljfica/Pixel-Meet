@@ -11,6 +11,12 @@
       display: block;
       margin: 0 auto;
       image-rendering: pixelated;
+      /* scale to roughly half the device size while
+         keeping the original 3:2 aspect ratio */
+      width: 50vmin;
+      height: calc(50vmin * 2 / 3); /* fallback height if aspect-ratio unsupported */
+      max-width: 100%;
+      aspect-ratio: 3 / 2;
     }
     #controls {
       display: flex;

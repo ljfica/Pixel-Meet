@@ -217,6 +217,7 @@ let flowerPopup = document.getElementById("flower-popup");
 let talkDanielaStart = null;
 let forgotFlowersActive = false;
 let forgotFlowersEnd = 0;
+let danielaTalkAfterFlowersCount = 0;
 
 function exitIndoor() {
   scene.current = 'outdoor';
@@ -566,15 +567,18 @@ function drawHunterFollowupBubble() {
 // === DIALOGUE LOGIC ===
 function updateDialogue() {
   if (flower.collected) {
-    showMessage = "Luke - I brought you a flower cutie!\nDaniela - OMG THANK YOU SO MUCH!!!!";
+    if (danielaTalkAfterFlowersCount > 2) {
+      showMessage = "Daniela - EEEkkKEEkkkeeee GET AWAY YOU FAT CREEP! Jus kiddin gimmie a kiss ;)";
+    } else {
+      showMessage = "Luke - I brought you a flower cutie!\nDaniela - OMG THANK YOU SO MUCH!!!!";
+    }
   } else {
     showMessage = "Daniela - Hi cutey!\nLuke - You're the cutey!!!";
   }
   messageIndex = 0;
-  showTypedMessage = '';
+  showTypedMessage = "";
   messageTimer = 0;
 }
-
 function updateMessageTyping() {
   if (!isTalking) return;
   if (messageIndex < showMessage.length) {
@@ -620,6 +624,7 @@ function checkInteractions() {
       flower.collected = true;
       const pickup = document.getElementById("pickup-sound");
       if (pickup) {
+      danielaTalkAfterFlowersCount = 0;
         pickup.currentTime = 0;
         pickup.play().catch(() => {});
       }
@@ -669,7 +674,10 @@ function checkInteractions() {
       ? "Luke - I brought you a flower cutie!\nDaniela - OMG THANK YOU SO MUCH!!!!"
       : "Daniela - Hi cutey!\nLuke - You're the cutey!!!";
     if (dist < talkDistance) {
-      if (!isTalking || showMessage !== danielaDialogue) {
+      if (!isTalking) {
+        if (flower.collected) {
+          danielaTalkAfterFlowersCount++;
+        }
         updateDialogue();
       }
       talkTarget = daniela;
@@ -679,8 +687,7 @@ function checkInteractions() {
         talkDanielaStart = Date.now();
       }
     }
-  }
-
+    }
   if (!talked) {
     if (isTalking) {
       if (talkTarget === hunter) {

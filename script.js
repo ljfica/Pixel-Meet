@@ -1,5 +1,8 @@
 
-let keysPressed = new Set();
+(function () {
+'use strict';
+
+const keysPressed = new Set();
 
 document.addEventListener("keydown", (e) => {
   keysPressed.add(e.key.toLowerCase());
@@ -808,4 +811,8 @@ function gameLoop() {
 
 updateDialogue();
 gameLoop();
+
+window.startMove = startMove;
+window.stopMove = stopMove;
+})();
 

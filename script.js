@@ -256,7 +256,7 @@ function drawWorldExtras() {
     ctx.textBaseline = "top";
     const lineHeight = 14;
     const padding = 4;
-    const lines = getWrappedLines(ctx, showTypedMessage, 120);
+    const lines = getWrappedLines(ctx, showTypedMessage, 150);
     let maxLineWidth = 0;
     for (const l of lines) {
       maxLineWidth = Math.max(maxLineWidth, ctx.measureText(l).width);

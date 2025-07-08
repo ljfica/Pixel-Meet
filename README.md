@@ -2,8 +2,9 @@
 A cute game I made for my beautiful, intelligent, and wonderful wife chronicling the meeting of Daniela and Luke as a pixelated character,
 watch as love envelops you, believe it as your friendly cat NPCs, and make it come true with Pixel Meet! 
 
-INSTRUCTIONS: Click code, download ZIP, extract zip in a Singular file (all files must be together for the game to
-run properly), run the game by clicking index.html.
+INSTRUCTIONS: Click code, download ZIP, extract zip in a singular folder (all files must remain together for the game to
+run properly), then start a simple local web server (e.g. `python -m http.server`) and open `index.html` from that server.
+Opening the file directly on some mobile browsers can prevent scripts from loading due to strict security settings.
 
 P.S - I love ya Daniela!
 

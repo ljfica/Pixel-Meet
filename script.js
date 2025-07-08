@@ -126,6 +126,7 @@ const gate = {
 let gateOpen = false;
 let gateTimer = 0;
 const GATE_OPEN_TIME = 60;
+
 // Flower near the fence's corner so it can be collected easily
 const flower = {
   // placed a few squares left/up from the fence to keep it

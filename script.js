@@ -267,9 +267,6 @@ function stopMove(dir) {
   if (!dir) keysPressed.clear();
 }
 
-  window.startMove = startMove;
-  window.stopMove = stopMove;
-
 function spawnHearts(npc) {
   const count = 3 + Math.floor(Math.random() * 2);
   for (let i = 0; i < count; i++) {
@@ -814,5 +811,7 @@ function gameLoop() {
 
 updateDialogue();
 gameLoop();
-})();
 
+  window.startMove = startMove;
+  window.stopMove = stopMove;
+})();

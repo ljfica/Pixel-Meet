@@ -74,9 +74,9 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 const player = { x: 20, y: 20, w: 10, h: 10, speed: 1.5 };
-const house = { x: 260, y: 50, w: 30, h: 30 };
-const flower = { x: 250, y: 120, collected: false };
-const daniela = { x: 260, y: 150 };
+const house = { x: 230, y: 50, w: 30, h: 30 };
+const flower = { x: 220, y: 120, collected: false };
+const daniela = { x: 230, y: 150 };
 const hearts = [];
 let lastHeartTime = 0;
 

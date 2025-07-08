@@ -4,7 +4,6 @@ let keysPressed = new Set();
 document.addEventListener("keydown", (e) => {
   keysPressed.add(e.key.toLowerCase());
 });
-
 document.addEventListener("keyup", (e) => {
   keysPressed.delete(e.key.toLowerCase());
 });
@@ -18,8 +17,6 @@ function updateMovement() {
   if (keysPressed.has("arrowright") || keysPressed.has("d")) dx += player.speed;
 }
 
-
-
 function wrapText(context, text, x, y, maxWidth, lineHeight) {
   const lines = getWrappedLines(context, text, maxWidth);
   for (const line of lines) {
@@ -31,32 +28,36 @@ function wrapText(context, text, x, y, maxWidth, lineHeight) {
 function getWrappedLines(context, text, maxWidth) {
   const wrapped = [];
   const paragraphs = text.split('\n');
-  for (const p of paragraphs) {
-    const words = p.split(' ');
+
+  for (const paragraph of paragraphs) {
+    const words = paragraph.split(' ');
     let line = '';
+
     for (const word of words) {
       const testLine = line + word + ' ';
-      if (context.measureText(testLine).width > maxWidth && line) {
+      const metrics = context.measureText(testLine);
+
+      if (metrics.width > maxWidth && line) {
         wrapped.push(line.trimEnd());
         line = word + ' ';
       } else {
         line = testLine;
       }
     }
-    wrapped.push(line.trimEnd());
+
+    if (line) {
+      wrapped.push(line.trimEnd());
+    }
   }
+
   return wrapped;
 }
 
-
-
-// === UPDATE HOUSE WITH ROOF AND DOOR ===
+// === DRAW HOUSE WITH ROOF AND DOOR ===
 function drawHouse() {
-  // Base
   ctx.fillStyle = "brown";
   ctx.fillRect(house.x, house.y, house.w, house.h);
 
-  // Roof
   ctx.fillStyle = "red";
   ctx.beginPath();
   ctx.moveTo(house.x - 5, house.y);
@@ -65,21 +66,21 @@ function drawHouse() {
   ctx.closePath();
   ctx.fill();
 
-  // Door
   ctx.fillStyle = "blue";
   ctx.fillRect(house.x + house.w / 3, house.y + house.h / 2, house.w / 3, house.h / 2);
 }
 
-
-
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// === GAME OBJECTS ===
 const player = { x: 20, y: 20, w: 10, h: 10, speed: 1.5 };
 const house = { x: 250, y: 50, w: 30, h: 30 };
 const flower = { x: 240, y: 120, collected: false };
 const daniela = { x: 250, y: 150 };
+const hearts = [];
+let lastHeartTime = 0;
+
+const HEART_SPAWN_INTERVAL = 500;
 let showMessage = '';
 let showTypedMessage = '';
 let messageIndex = 0;
@@ -91,7 +92,7 @@ let dx = 0, dy = 0;
 let flowerPopup = document.getElementById("flower-popup");
 
 // === SOUND ON TAP ===
-document.getElementById("startScreen").addEventListener("click", function () {
+document.getElementById("startScreen").addEventListener("click", () => {
   document.getElementById("startScreen").style.display = "none";
   const audio = document.getElementById("bg-music");
   if (audio && audio.play) audio.play().catch(() => {});
@@ -104,7 +105,6 @@ document.body.addEventListener("click", () => {
 });
 
 // === TOUCH/ON-SCREEN CONTROLS ===
-
 function startMove(dir) {
   if (dir === "up") keysPressed.add("arrowup");
   if (dir === "down") keysPressed.add("arrowdown");
@@ -119,32 +119,60 @@ function stopMove(dir) {
   if (!dir) keysPressed.clear();
 }
 
+function spawnHearts(npc) {
+  const count = 3 + Math.floor(Math.random() * 2);
+  for (let i = 0; i < count; i++) {
+    hearts.push({
+      x: npc.x + 4 + (Math.random() * 4 - 2),
+      y: npc.y,
+      vx: (Math.random() - 0.5) * 0.2,
+      vy: -0.3 - Math.random() * 0.2,
+      life: 60,
+    });
+  }
+}
+
+function updateAndDrawHearts() {
+  const now = Date.now();
+  const near = Math.hypot(player.x - daniela.x, player.y - daniela.y) < 30;
+  if (near && now - lastHeartTime > HEART_SPAWN_INTERVAL) {
+    spawnHearts(daniela);
+    lastHeartTime = now;
+  }
+
+  for (let i = hearts.length - 1; i >= 0; i--) {
+    const h = hearts[i];
+    h.x += h.vx;
+    h.y += h.vy;
+    h.life--;
+    if (h.life <= 0) {
+      hearts.splice(i, 1);
+      continue;
+    }
+    ctx.fillStyle = 'pink';
+    ctx.fillRect(h.x, h.y, 2, 2);
+  }
+}
+
 // === DRAW WORLD OBJECTS ===
 function drawWorldExtras() {
-  // Grass
   ctx.fillStyle = "#88c070";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Road vertical
   ctx.fillStyle = "#444";
   ctx.fillRect(140, 0, 20, 200);
-
-  // Road horizontal
   ctx.fillRect(0, 140, 300, 20);
 
-    drawHouse();
+  drawHouse();
 
-  // Flower
   if (!flower.collected) {
     ctx.fillStyle = "magenta";
     ctx.fillRect(flower.x, flower.y, 5, 5);
   }
 
-  // Daniela
   ctx.fillStyle = "pink";
   ctx.fillRect(daniela.x, daniela.y, 10, 10);
 
-  // Dialogue
   if (isTalking && showTypedMessage) {
     ctx.font = "12px monospace";
     ctx.textBaseline = "top";
@@ -216,6 +244,7 @@ function checkInteractions() {
     isTalking = false;
   }
 
+  // Collision with house
   if (player.x < house.x + house.w &&
       player.x + player.w > house.x &&
       player.y < house.y + house.h &&
@@ -229,18 +258,16 @@ function checkInteractions() {
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawWorldExtras();
-  checkInteractions();
+  updateAndDrawHearts();
   updateMessageTyping();
+  checkInteractions();
+  updateMovement();
 
-    updateMovement();
-  // Update position
   player.x += dx;
   player.y += dy;
-  // Clamp to canvas
   player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
   player.y = Math.max(0, Math.min(canvas.height - player.h, player.y));
 
-  // Draw player
   ctx.fillStyle = "blue";
   ctx.fillRect(player.x, player.y, player.w, player.h);
 

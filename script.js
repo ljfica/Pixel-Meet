@@ -83,7 +83,12 @@ const smokeParticles = [];
 let lastSmokeTime = 0;
 const SMOKE_SPAWN_INTERVAL = 200;
 const fence = { x: house.x - 15, y: house.y - 15, w: house.w + 30, h: house.h + 30 };
-const gate = { x: fence.x + fence.w / 2 - 6, y: fence.y + fence.h - 2, w: 12, h: 2 };
+const gate = {
+  x: fence.x + fence.w / 2 - 8, // center with new width
+  y: fence.y + fence.h - 2,
+  w: 16,
+  h: 2
+};
 let gateOpen = false;
 let gateTimer = 0;
 const GATE_OPEN_TIME = 60;

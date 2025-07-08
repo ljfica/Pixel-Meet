@@ -53,7 +53,7 @@ function getWrappedLines(context, text, maxWidth) {
   return wrapped;
 }
 
-// === DRAW HOUSE WITH ROOF AND DOOR ===
+// === DRAW HOUSE WITH ROOF, DOOR AND CHIMNEY ===
 function drawHouse() {
   ctx.fillStyle = "brown";
   ctx.fillRect(house.x, house.y, house.w, house.h);
@@ -66,6 +66,9 @@ function drawHouse() {
   ctx.closePath();
   ctx.fill();
 
+  ctx.fillStyle = "#555"; // chimney
+  ctx.fillRect(chimney.x, chimney.y, chimney.w, chimney.h);
+
   ctx.fillStyle = "blue";
   ctx.fillRect(house.x + house.w / 3, house.y + house.h / 2, house.w / 3, house.h / 2);
 }
@@ -75,6 +78,15 @@ const ctx = canvas.getContext("2d");
 
 const player = { x: 20, y: 20, w: 10, h: 10, speed: 1.5 };
 const house = { x: 260, y: 50, w: 30, h: 30 };
+const chimney = { x: house.x + house.w - 6, y: house.y - 12, w: 4, h: 10 };
+const smokeParticles = [];
+let lastSmokeTime = 0;
+const SMOKE_SPAWN_INTERVAL = 200;
+const fence = { x: house.x - 15, y: house.y - 15, w: house.w + 30, h: house.h + 30 };
+const gate = { x: fence.x + fence.w / 2 - 6, y: fence.y + fence.h - 2, w: 12, h: 2 };
+let gateOpen = false;
+let gateTimer = 0;
+const GATE_OPEN_TIME = 60;
 // Position the flower slightly to the left of the house
 const flower = { x: house.x - 20, y: 120, collected: false };
 // Daniela starts near the road but a bit away from the intersection
@@ -156,6 +168,55 @@ function updateAndDrawHearts() {
   }
 }
 
+function spawnSmoke() {
+  smokeParticles.push({
+    x: chimney.x + chimney.w / 2,
+    y: chimney.y,
+    vx: (Math.random() - 0.5) * 0.1,
+    vy: -0.2 - Math.random() * 0.1,
+    life: 60,
+    alpha: 1,
+  });
+}
+
+function updateAndDrawSmoke() {
+  const now = Date.now();
+  if (now - lastSmokeTime > SMOKE_SPAWN_INTERVAL) {
+    spawnSmoke();
+    lastSmokeTime = now;
+  }
+  for (let i = smokeParticles.length - 1; i >= 0; i--) {
+    const s = smokeParticles[i];
+    s.x += s.vx;
+    s.y += s.vy;
+    s.life--;
+    s.alpha -= 0.015;
+    if (s.life <= 0 || s.alpha <= 0) {
+      smokeParticles.splice(i, 1);
+      continue;
+    }
+    ctx.fillStyle = `rgba(200,200,200,${s.alpha})`;
+    ctx.fillRect(s.x, s.y, 2, 2);
+  }
+}
+
+function drawFence() {
+  ctx.fillStyle = "white";
+  // top
+  ctx.fillRect(fence.x, fence.y, fence.w, 2);
+  // left and right
+  ctx.fillRect(fence.x, fence.y, 2, fence.h);
+  ctx.fillRect(fence.x + fence.w - 2, fence.y, 2, fence.h);
+  // bottom left section
+  ctx.fillRect(fence.x, fence.y + fence.h - 2, gate.x - fence.x, 2);
+  // bottom right section
+  ctx.fillRect(gate.x + gate.w, fence.y + fence.h - 2, fence.x + fence.w - (gate.x + gate.w), 2);
+  // gate
+  if (!gateOpen) {
+    ctx.fillRect(gate.x, gate.y - 2, gate.w, 2);
+  }
+}
+
 // === DRAW WORLD OBJECTS ===
 function drawWorldExtras() {
   ctx.fillStyle = "#88c070";
@@ -165,7 +226,17 @@ function drawWorldExtras() {
   ctx.fillRect(140, 0, 20, 200);
   ctx.fillRect(0, 140, 300, 20);
 
+  // dirt path from road to house
+  const pathW = 6;
+  const doorX = house.x + house.w / 2 - pathW / 2;
+  ctx.fillStyle = "#b5651d";
+  ctx.fillRect(160, house.y + house.h - pathW / 2, doorX - 160 + pathW, pathW);
+
+  drawFence();
+
   drawHouse();
+
+  updateAndDrawSmoke();
 
   if (!flower.collected) {
     ctx.fillStyle = "magenta";
@@ -258,6 +329,45 @@ function checkInteractions() {
       player.y + player.h > house.y) {
     player.x -= dx;
     player.y -= dy;
+  }
+
+  // gate timer
+  if (gateTimer > 0) {
+    gateTimer--;
+    if (gateTimer === 0) gateOpen = false;
+  }
+
+  const gateRect = { x: gate.x, y: gate.y - gate.h, w: gate.w, h: gate.h };
+
+  // open gate when player touches it
+  if (!gateOpen &&
+      player.x < gateRect.x + gateRect.w &&
+      player.x + player.w > gateRect.x &&
+      player.y < gateRect.y + gateRect.h &&
+      player.y + player.h > gateRect.y) {
+    gateOpen = true;
+    gateTimer = GATE_OPEN_TIME;
+  }
+
+  // fence collisions
+  const fenceRects = [
+    { x: fence.x, y: fence.y, w: fence.w, h: 2 },
+    { x: fence.x, y: fence.y, w: 2, h: fence.h },
+    { x: fence.x + fence.w - 2, y: fence.y, w: 2, h: fence.h },
+    { x: fence.x, y: fence.y + fence.h - 2, w: gate.x - fence.x, h: 2 },
+    { x: gate.x + gate.w, y: fence.y + fence.h - 2, w: fence.x + fence.w - (gate.x + gate.w), h: 2 },
+  ];
+  if (!gateOpen) {
+    fenceRects.push(gateRect);
+  }
+  for (const r of fenceRects) {
+    if (player.x < r.x + r.w &&
+        player.x + player.w > r.x &&
+        player.y < r.y + r.h &&
+        player.y + player.h > r.y) {
+      player.x -= dx;
+      player.y -= dy;
+    }
   }
 }
 

@@ -816,3 +816,7 @@ updateDialogue();
 gameLoop();
 })();
 
+window.startMove = startMove;
+window.stopMove = stopMove;
+})();
+

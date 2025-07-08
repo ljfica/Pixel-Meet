@@ -7,11 +7,14 @@
 <title>Pixel Meet Game</title>
 
 
-<link href="style.css" rel="stylesheet"/></head>
+<link href="style.css" rel="stylesheet"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; media-src 'self'; style-src 'self'; script-src 'self'"/>
+<meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+</head>
 <body>
 <!-- Embedded Start Screen Image -->
 <div id="startScreen">
-<img alt="Tap to Start" src="assets/start.png"/>
+<img alt="Tap to Start" src="assets/start.png" crossorigin="anonymous"/>
 </div>
 
 <div id="flower-popup">Flowers Collected!</div>
@@ -24,11 +27,11 @@
 <button class="btn" onmousedown="startMove('right')" onmouseup="stopMove('right')" ontouchend="stopMove('right')" ontouchstart="startMove('right')">➡️</button>
 </div>
 </div>
-<audio autoplay="" id="bg-music" loop="" src="assets/music.mp3">
+<audio autoplay="" id="bg-music" loop="" src="assets/music.mp3" crossorigin="anonymous">
     Your browser does not support the audio element.
 </audio>
-<audio id="pickup-sound" src="assets/flower_pickup.mp3"></audio>
-<audio id="door-sound" src="assets/PIXEL CREAKING DOOR.mp3"></audio>
+<audio id="pickup-sound" src="assets/flower_pickup.mp3" crossorigin="anonymous"></audio>
+<audio id="door-sound" src="assets/PIXEL CREAKING DOOR.mp3" crossorigin="anonymous"></audio>
 <script src="script.js"></script>
 </body>
 </html>

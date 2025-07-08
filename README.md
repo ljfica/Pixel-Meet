@@ -15,3 +15,11 @@ reduces attack surface and helps maintain a secure runtime environment. It also 
 [Oracle Secure Coding Guidelines](https://docs.oracle.com/en/java/javase/17/seccode/seccode1.html)
 recommendations for fundamentals and input validation by minimizing potential external input and not
 trusting data from outside sources.
+
+## Additional Security Practices
+
+Pixel-Meet adheres to the [Microsoft Best Security Practices for Game Development](https://learn.microsoft.com/en-us/windows/win32/dxtecharts/best-security-practices-in-game-development).
+The code avoids dangerous functions such as `eval` and isolates its logic to reduce the attack surface.
+
+It also follows Google's [Web Application Requirements](https://partner-security.withgoogle.com/docs/webapp_requirements.html#encryption).
+While this game does not perform any network communication, any future online features must enforce HTTPS/TLS encryption for all data in transit.

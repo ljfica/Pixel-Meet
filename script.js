@@ -183,7 +183,7 @@ const car = {
   x: 140 + 10 - 6,
   y: canvas.height,
   w: 12,
-  h: 8,
+  h: 16, // doubled length
   direction: -1,
   active: true
 };
@@ -201,6 +201,10 @@ const talkDistance = 30;
 let talkTarget = null;
 let dx = 0, dy = 0;
 let flowerPopup = document.getElementById("flower-popup");
+// timer for luke forgetting flowers message
+let talkDanielaStart = null;
+let forgotFlowersActive = false;
+let forgotFlowersEnd = 0;
 
 function exitIndoor() {
   scene.current = 'outdoor';
@@ -313,14 +317,25 @@ function updateAndDrawSmoke() {
 }
 
 function updateDeer() {
-  deer.x += deer.vx;
-  deer.y += deer.vy;
-  if (deer.x < 0 || deer.x > canvas.width - deer.w) deer.vx *= -1;
-  if (deer.y < 0 || deer.y > canvas.height - deer.h) deer.vy *= -1;
-  if (Math.random() < 0.01) {
+  const dist = Math.hypot(player.x - deer.x, player.y - deer.y);
+  if (dist < talkDistance) {
+    const angle = Math.atan2(deer.y - player.y, deer.x - player.x);
+    const speed = 1.2;
+    deer.vx = Math.cos(angle) * speed;
+    deer.vy = Math.sin(angle) * speed;
+  } else if (Math.random() < 0.01) {
     deer.vx = (Math.random() - 0.5) * 0.6;
     deer.vy = (Math.random() - 0.5) * 0.6;
   }
+  deer.x += deer.vx;
+  deer.y += deer.vy;
+  // keep deer within top-left quadrant inside the roads
+  const maxX = 140 - deer.w;
+  const maxY = 140 - deer.h;
+  if (deer.x < 0) { deer.x = 0; deer.vx *= -1; }
+  if (deer.x > maxX) { deer.x = maxX; deer.vx *= -1; }
+  if (deer.y < 0) { deer.y = 0; deer.vy *= -1; }
+  if (deer.y > maxY) { deer.y = maxY; deer.vy *= -1; }
 }
 
 function updateCar() {
@@ -346,6 +361,9 @@ function drawCar() {
   if (!car.active) return;
   ctx.fillStyle = 'red';
   ctx.fillRect(car.x, car.y, car.w, car.h);
+  ctx.fillStyle = '#a0e0ff';
+  ctx.fillRect(car.x + 2, car.y + 2, car.w - 4, 3);
+  ctx.fillRect(car.x + 2, car.y + car.h - 5, car.w - 4, 3);
 }
 
 function drawFence() {
@@ -474,6 +492,34 @@ function drawDialogueBubble() {
   }
 }
 
+function drawForgotFlowersBubble() {
+  if (!forgotFlowersActive) return;
+  const message = 'Luke - I FORGOT THE FLOWERS!!';
+  ctx.font = '12px monospace';
+  ctx.textBaseline = 'top';
+  const lineHeight = 14;
+  const padding = 4;
+  const lines = getWrappedLines(ctx, message, 150);
+  let maxLineWidth = 0;
+  for (const l of lines) {
+    maxLineWidth = Math.max(maxLineWidth, ctx.measureText(l).width);
+  }
+  const boxWidth = maxLineWidth + padding * 2;
+  const boxHeight = lineHeight * lines.length + padding * 2;
+  const centerX = player.x + player.w / 2;
+  const textX = centerX - boxWidth / 2;
+  const baseY = player.y;
+  const textY = baseY - boxHeight - 4;
+  ctx.fillStyle = 'black';
+  ctx.fillRect(textX, textY, boxWidth, boxHeight);
+  ctx.fillStyle = 'white';
+  let y = textY + padding;
+  for (const l of lines) {
+    ctx.fillText(l, textX + padding, y);
+    y += lineHeight;
+  }
+}
+
 // === DIALOGUE LOGIC ===
 function updateDialogue() {
   if (flower.collected) {
@@ -553,6 +599,7 @@ function checkInteractions() {
         talkTarget = cat;
         isTalking = true;
         talked = true;
+        talkDanielaStart = null;
         break;
       }
     }
@@ -570,6 +617,9 @@ function checkInteractions() {
       talkTarget = daniela;
       isTalking = true;
       talked = true;
+      if (!flower.collected && !talkDanielaStart) {
+        talkDanielaStart = Date.now();
+      }
     }
   }
 
@@ -580,6 +630,7 @@ function checkInteractions() {
     }
     isTalking = false;
     talkTarget = null;
+    talkDanielaStart = null;
   }
 
   if (scene.current === 'outdoor') {
@@ -657,9 +708,20 @@ function gameLoop() {
   updateMessageTyping();
   checkInteractions();
 
+  const now = Date.now();
+  if (talkDanielaStart && now - talkDanielaStart >= 3000) {
+    forgotFlowersActive = true;
+    forgotFlowersEnd = now + 2000;
+    talkDanielaStart = null;
+  }
+  if (forgotFlowersActive && now >= forgotFlowersEnd) {
+    forgotFlowersActive = false;
+  }
+
   ctx.fillStyle = "blue";
   ctx.fillRect(player.x, player.y, player.w, player.h);
   drawDialogueBubble();
+  drawForgotFlowersBubble();
 
   requestAnimationFrame(gameLoop);
 }

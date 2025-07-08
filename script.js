@@ -75,8 +75,10 @@ const ctx = canvas.getContext("2d");
 
 const player = { x: 20, y: 20, w: 10, h: 10, speed: 1.5 };
 const house = { x: 260, y: 50, w: 30, h: 30 };
-const flower = { x: 250, y: 120, collected: false };
-const daniela = { x: 260, y: 150 };
+// Position the flower slightly to the left of the house
+const flower = { x: house.x - 20, y: 120, collected: false };
+// Daniela starts near the road but a bit away from the intersection
+const daniela = { x: 180, y: 150, color: "#ff69b4" };
 const hearts = [];
 let lastHeartTime = 0;
 
@@ -170,7 +172,7 @@ function drawWorldExtras() {
     ctx.fillRect(flower.x, flower.y, 5, 5);
   }
 
-  ctx.fillStyle = "pink";
+  ctx.fillStyle = daniela.color;
   ctx.fillRect(daniela.x, daniela.y, 10, 10);
 
   if (isTalking && showTypedMessage) {

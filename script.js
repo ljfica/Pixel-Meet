@@ -103,23 +103,20 @@ document.body.addEventListener("click", () => {
   }
 });
 
-// === CONTROLS ===
-document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowUp" || e.key.toLowerCase() === "w") startMove("up");
-  if (e.key === "ArrowDown" || e.key.toLowerCase() === "s") startMove("down");
-  if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") startMove("left");
-  if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") startMove("right");
-});
-document.addEventListener("keyup", stopMove);
+// === TOUCH/ON-SCREEN CONTROLS ===
 
 function startMove(dir) {
-  if (dir === "up") { dx = 0; dy = -player.speed; }
-  if (dir === "down") { dx = 0; dy = player.speed; }
-  if (dir === "left") { dx = -player.speed; dy = 0; }
-  if (dir === "right") { dx = player.speed; dy = 0; }
+  if (dir === "up") keysPressed.add("arrowup");
+  if (dir === "down") keysPressed.add("arrowdown");
+  if (dir === "left") keysPressed.add("arrowleft");
+  if (dir === "right") keysPressed.add("arrowright");
 }
-function stopMove() {
-  dx = 0; dy = 0;
+function stopMove(dir) {
+  if (dir === "up") keysPressed.delete("arrowup");
+  if (dir === "down") keysPressed.delete("arrowdown");
+  if (dir === "left") keysPressed.delete("arrowleft");
+  if (dir === "right") keysPressed.delete("arrowright");
+  if (!dir) keysPressed.clear();
 }
 
 // === DRAW WORLD OBJECTS ===

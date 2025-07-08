@@ -14,11 +14,7 @@
 <img alt="Tap to Start" src="assets/start.png"/>
 </div>
 
-<div id="flower-popup" style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-  background: #ffccff; color: #660066; padding: 6px 12px; border-radius: 8px;
-  font-family: monospace; font-size: 14px; opacity: 0; transition: opacity 0.3s ease;">
-  Flowers Collected!
-</div>
+<div id="flower-popup">Flowers Collected!</div>
 <canvas height="200" id="game" width="300"></canvas>
 <div id="controls">
 <div>
@@ -27,7 +23,9 @@
 <button class="btn" onmousedown="startMove('down')" onmouseup="stopMove('down')" ontouchend="stopMove('down')" ontouchstart="startMove('down')">⬇️</button>
 <button class="btn" onmousedown="startMove('right')" onmouseup="stopMove('right')" ontouchend="stopMove('right')" ontouchstart="startMove('right')">➡️</button>
 </div>
+<button class="btn" id="debug-toggle" aria-label="Toggle debug log">🐞</button>
 </div>
+<div id="debug-log"></div>
 <audio autoplay="" id="bg-music" loop="" src="assets/music.mp3">
     Your browser does not support the audio element.
 </audio>

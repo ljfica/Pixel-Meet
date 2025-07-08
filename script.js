@@ -278,8 +278,10 @@ function spawnHearts(npc) {
 function updateAndDrawHearts() {
   const now = Date.now();
   const near = Math.hypot(player.x - daniela.x, player.y - daniela.y) < 30;
-  if (near && now - lastHeartTime > HEART_SPAWN_INTERVAL) {
+  const talking = isTalking && talkTarget === daniela;
+  if ((near || talking) && now - lastHeartTime > HEART_SPAWN_INTERVAL) {
     spawnHearts(daniela);
+    if (talking) spawnHearts(player);
     lastHeartTime = now;
   }
 
@@ -292,7 +294,7 @@ function updateAndDrawHearts() {
       hearts.splice(i, 1);
       continue;
     }
-    ctx.fillStyle = 'pink';
+    ctx.fillStyle = 'red';
     ctx.fillRect(h.x, h.y, 2, 2);
   }
 }
@@ -806,3 +808,26 @@ function gameLoop() {
 
 updateDialogue();
 gameLoop();
+
+const debugLog = document.getElementById('debug-log');
+const debugToggle = document.getElementById('debug-toggle');
+if (debugToggle) {
+  debugToggle.addEventListener('click', () => {
+    if (!debugLog) return;
+    debugLog.style.display = debugLog.style.display === 'block' ? 'none' : 'block';
+  });
+}
+
+function logDebug(msg) {
+  if (!debugLog) return;
+  const entry = document.createElement('div');
+  entry.textContent = msg;
+  debugLog.appendChild(entry);
+  if (debugLog.children.length > 20) {
+    debugLog.removeChild(debugLog.firstChild);
+  }
+}
+
+window.addEventListener('error', (e) => {
+  logDebug(`ERR: ${e.message} (${e.filename}:${e.lineno})`);
+});

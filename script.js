@@ -1,8 +1,16 @@
 
 (function () {
-'use strict';
+  'use strict';
 
-const keysPressed = new Set();
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const startScreenEl = document.getElementById('startScreen');
+  const bgMusic = document.getElementById('bg-music');
+  const pickupSound = document.getElementById('pickup-sound');
+  const doorSound = document.getElementById('door-sound');
+  const flowerPopup = document.getElementById('flower-popup');
+
+  let keysPressed = new Set();
 
 document.addEventListener("keydown", (e) => {
   keysPressed.add(e.key.toLowerCase());
@@ -76,8 +84,6 @@ function drawHouse() {
   ctx.fillRect(house.x + house.w / 3, house.y + house.h / 2, house.w / 3, house.h / 2);
 }
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
 
 const player = { x: 20, y: 20, w: 10, h: 10, speed: 1.5 };
 const house = { x: 260, y: 50, w: 30, h: 30 };
@@ -215,7 +221,6 @@ let isTalking = false;
 const talkDistance = 30;
 let talkTarget = null;
 let dx = 0, dy = 0;
-let flowerPopup = document.getElementById("flower-popup");
 // timer for luke forgetting flowers message
 let talkDanielaStart = null;
 let forgotFlowersActive = false;
@@ -224,10 +229,9 @@ let danielaTalkAfterFlowersCount = 0;
 
 function exitIndoor() {
   scene.current = 'outdoor';
-  const doorAudio = document.getElementById('door-sound');
-  if (doorAudio) {
-    doorAudio.currentTime = 0;
-    doorAudio.play().catch(() => {});
+  if (doorSound) {
+    doorSound.currentTime = 0;
+    doorSound.play().catch(() => {});
   }
   player.x = door.x + door.w / 2 - player.w / 2;
   player.y = door.y + door.h + 2;
@@ -238,15 +242,13 @@ function exitIndoor() {
 }
 
 // === SOUND ON TAP ===
-document.getElementById("startScreen").addEventListener("click", () => {
-  document.getElementById("startScreen").style.display = "none";
-  const audio = document.getElementById("bg-music");
-  if (audio && audio.play) audio.play().catch(() => {});
+startScreenEl.addEventListener('click', () => {
+  startScreenEl.style.display = 'none';
+  if (bgMusic && bgMusic.play) bgMusic.play().catch(() => {});
 });
-document.body.addEventListener("click", () => {
-  const audio = document.getElementById("bg-music");
-  if (audio && audio.paused) {
-    audio.play().catch(() => {});
+document.body.addEventListener('click', () => {
+  if (bgMusic && bgMusic.paused) {
+    bgMusic.play().catch(() => {});
   }
 });
 
@@ -264,6 +266,9 @@ function stopMove(dir) {
   if (dir === "right") keysPressed.delete("arrowright");
   if (!dir) keysPressed.clear();
 }
+
+  window.startMove = startMove;
+  window.stopMove = stopMove;
 
 function spawnHearts(npc) {
   const count = 3 + Math.floor(Math.random() * 2);
@@ -608,10 +613,9 @@ function checkInteractions() {
         player.x + player.w > door.x &&
         player.y < door.y + door.h &&
         player.y + player.h > door.y) {
-      const doorAudio = document.getElementById('door-sound');
-      if (doorAudio) {
-        doorAudio.currentTime = 0;
-        doorAudio.play().catch(() => {});
+      if (doorSound) {
+        doorSound.currentTime = 0;
+        doorSound.play().catch(() => {});
       }
       scene.current = 'indoor';
       player.x = canvas.width / 2 - player.w / 2;
@@ -627,11 +631,10 @@ function checkInteractions() {
         player.y < flower.y + 5 &&
         player.y + player.h > flower.y) {
       flower.collected = true;
-      const pickup = document.getElementById("pickup-sound");
-      if (pickup) {
-      danielaTalkAfterFlowersCount = 0;
-        pickup.currentTime = 0;
-        pickup.play().catch(() => {});
+      if (pickupSound) {
+        danielaTalkAfterFlowersCount = 0;
+        pickupSound.currentTime = 0;
+        pickupSound.play().catch(() => {});
       }
       flowerPopup.style.opacity = 1;
       setTimeout(() => flowerPopup.style.opacity = 0, 2000);
@@ -811,6 +814,7 @@ function gameLoop() {
 
 updateDialogue();
 gameLoop();
+})();
 
 window.startMove = startMove;
 window.stopMove = stopMove;

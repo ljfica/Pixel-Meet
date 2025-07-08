@@ -21,20 +21,24 @@ function updateMovement() {
 
 
 function wrapText(context, text, x, y, maxWidth, lineHeight) {
-  const words = text.split(' ');
-  let line = '';
-  for (let i = 0; i < words.length; i++) {
-    const testLine = line + words[i] + ' ';
-    const metrics = context.measureText(testLine);
-    if (metrics.width > maxWidth && i > 0) {
-      context.fillText(line, x, y);
-      line = words[i] + ' ';
-      y += lineHeight;
-    } else {
-      line = testLine;
+  const lines = text.split('\n');
+  for (let j = 0; j < lines.length; j++) {
+    const words = lines[j].split(' ');
+    let line = '';
+    for (let i = 0; i < words.length; i++) {
+      const testLine = line + words[i] + ' ';
+      const metrics = context.measureText(testLine);
+      if (metrics.width > maxWidth && i > 0) {
+        context.fillText(line, x, y);
+        line = words[i] + ' ';
+        y += lineHeight;
+      } else {
+        line = testLine;
+      }
     }
+    context.fillText(line, x, y);
+    y += lineHeight;
   }
-  context.fillText(line, x, y);
 }
 
 
@@ -143,9 +147,9 @@ function drawWorldExtras() {
 // === DIALOGUE LOGIC ===
 function updateDialogue() {
   if (flower.collected) {
-    showMessage = "Thank you for the flower!";
+    showMessage = "Luke (blue) - I brought you a flower cutie!\nDaniela (pink) - OMG THANK YOU SO MUCH!!!!";
   } else {
-    showMessage = "Have you seen a flower around here?";
+    showMessage = "Daniela (pink) - Hi cutey!\nLuke (blue) - You're the cutey!!!";
   }
   messageIndex = 0;
   showTypedMessage = '';

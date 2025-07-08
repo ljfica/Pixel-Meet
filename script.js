@@ -4,7 +4,6 @@ let keysPressed = new Set();
 document.addEventListener("keydown", (e) => {
   keysPressed.add(e.key.toLowerCase());
 });
-
 document.addEventListener("keyup", (e) => {
   keysPressed.delete(e.key.toLowerCase());
 });
@@ -18,38 +17,47 @@ function updateMovement() {
   if (keysPressed.has("arrowright") || keysPressed.has("d")) dx += player.speed;
 }
 
-
-
 function wrapText(context, text, x, y, maxWidth, lineHeight) {
-  const lines = text.split('\n');
-  for (let j = 0; j < lines.length; j++) {
-    const words = lines[j].split(' ');
-    let line = '';
-    for (let i = 0; i < words.length; i++) {
-      const testLine = line + words[i] + ' ';
-      const metrics = context.measureText(testLine);
-      if (metrics.width > maxWidth && i > 0) {
-        context.fillText(line, x, y);
-        line = words[i] + ' ';
-        y += lineHeight;
-      } else {
-        line = testLine;
-      }
-    }
+  const lines = getWrappedLines(context, text, maxWidth);
+  for (const line of lines) {
     context.fillText(line, x, y);
     y += lineHeight;
   }
 }
 
+function getWrappedLines(context, text, maxWidth) {
+  const wrapped = [];
+  const paragraphs = text.split('\n');
 
+  for (const paragraph of paragraphs) {
+    const words = paragraph.split(' ');
+    let line = '';
 
-// === UPDATE HOUSE WITH ROOF AND DOOR ===
+    for (const word of words) {
+      const testLine = line + word + ' ';
+      const metrics = context.measureText(testLine);
+
+      if (metrics.width > maxWidth && line) {
+        wrapped.push(line.trimEnd());
+        line = word + ' ';
+      } else {
+        line = testLine;
+      }
+    }
+
+    if (line) {
+      wrapped.push(line.trimEnd());
+    }
+  }
+
+  return wrapped;
+}
+
+// === DRAW HOUSE WITH ROOF AND DOOR ===
 function drawHouse() {
-  // Base
   ctx.fillStyle = "brown";
   ctx.fillRect(house.x, house.y, house.w, house.h);
 
-  // Roof
   ctx.fillStyle = "red";
   ctx.beginPath();
   ctx.moveTo(house.x - 5, house.y);
@@ -58,27 +66,21 @@ function drawHouse() {
   ctx.closePath();
   ctx.fill();
 
-  // Door
   ctx.fillStyle = "blue";
   ctx.fillRect(house.x + house.w / 3, house.y + house.h / 2, house.w / 3, house.h / 2);
 }
 
-
-
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// === GAME OBJECTS ===
 const player = { x: 20, y: 20, w: 10, h: 10, speed: 1.5 };
 const house = { x: 250, y: 50, w: 30, h: 30 };
 const flower = { x: 240, y: 120, collected: false };
 const daniela = { x: 250, y: 150 };
-// Heart particle effects
 const hearts = [];
 let lastHeartTime = 0;
 
-const HEART_SPAWN_INTERVAL = 500; // ms
-
+const HEART_SPAWN_INTERVAL = 500;
 let showMessage = '';
 let showTypedMessage = '';
 let messageIndex = 0;
@@ -90,7 +92,7 @@ let dx = 0, dy = 0;
 let flowerPopup = document.getElementById("flower-popup");
 
 // === SOUND ON TAP ===
-document.getElementById("startScreen").addEventListener("click", function () {
+document.getElementById("startScreen").addEventListener("click", () => {
   document.getElementById("startScreen").style.display = "none";
   const audio = document.getElementById("bg-music");
   if (audio && audio.play) audio.play().catch(() => {});
@@ -102,27 +104,23 @@ document.body.addEventListener("click", () => {
   }
 });
 
-// === CONTROLS ===
-document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowUp" || e.key.toLowerCase() === "w") startMove("up");
-  if (e.key === "ArrowDown" || e.key.toLowerCase() === "s") startMove("down");
-  if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") startMove("left");
-  if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") startMove("right");
-});
-document.addEventListener("keyup", stopMove);
-
+// === TOUCH/ON-SCREEN CONTROLS ===
 function startMove(dir) {
-  if (dir === "up") { dx = 0; dy = -player.speed; }
-  if (dir === "down") { dx = 0; dy = player.speed; }
-  if (dir === "left") { dx = -player.speed; dy = 0; }
-  if (dir === "right") { dx = player.speed; dy = 0; }
+  if (dir === "up") keysPressed.add("arrowup");
+  if (dir === "down") keysPressed.add("arrowdown");
+  if (dir === "left") keysPressed.add("arrowleft");
+  if (dir === "right") keysPressed.add("arrowright");
 }
-function stopMove() {
-  dx = 0; dy = 0;
+function stopMove(dir) {
+  if (dir === "up") keysPressed.delete("arrowup");
+  if (dir === "down") keysPressed.delete("arrowdown");
+  if (dir === "left") keysPressed.delete("arrowleft");
+  if (dir === "right") keysPressed.delete("arrowright");
+  if (!dir) keysPressed.clear();
 }
 
 function spawnHearts(npc) {
-  const count = 3 + Math.floor(Math.random() * 2); // 3 or 4
+  const count = 3 + Math.floor(Math.random() * 2);
   for (let i = 0; i < count; i++) {
     hearts.push({
       x: npc.x + 4 + (Math.random() * 4 - 2),
@@ -158,49 +156,54 @@ function updateAndDrawHearts() {
 
 // === DRAW WORLD OBJECTS ===
 function drawWorldExtras() {
-  // Grass
   ctx.fillStyle = "#88c070";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Road vertical
   ctx.fillStyle = "#444";
   ctx.fillRect(140, 0, 20, 200);
-
-  // Road horizontal
   ctx.fillRect(0, 140, 300, 20);
 
-    drawHouse();
+  drawHouse();
 
-  // Flower
   if (!flower.collected) {
     ctx.fillStyle = "magenta";
     ctx.fillRect(flower.x, flower.y, 5, 5);
   }
 
-  // Daniela
   ctx.fillStyle = "pink";
   ctx.fillRect(daniela.x, daniela.y, 10, 10);
 
-  // Dialogue
   if (isTalking && showTypedMessage) {
     ctx.font = "12px monospace";
+    ctx.textBaseline = "top";
     const lineHeight = 14;
-    const lines = showTypedMessage.split("\n");
-    const textX = daniela.x - 40;
-    const textY = daniela.y - lineHeight * lines.length - 10;
+    const padding = 4;
+    const lines = getWrappedLines(ctx, showTypedMessage, 120);
+    let maxLineWidth = 0;
+    for (const l of lines) {
+      maxLineWidth = Math.max(maxLineWidth, ctx.measureText(l).width);
+    }
+    const boxWidth = maxLineWidth + padding * 2;
+    const boxHeight = lineHeight * lines.length + padding * 2;
+    const textX = daniela.x - boxWidth / 2;
+    const textY = daniela.y - boxHeight - 10;
     ctx.fillStyle = "black";
-    ctx.fillRect(textX - 4, textY - 2, 128, lineHeight * lines.length + 8);
+    ctx.fillRect(textX, textY, boxWidth, boxHeight);
     ctx.fillStyle = "white";
-    wrapText(ctx, showTypedMessage, textX, textY + lineHeight, 120, lineHeight);
+    let y = textY + padding;
+    for (const l of lines) {
+      ctx.fillText(l, textX + padding, y);
+      y += lineHeight;
+    }
   }
 }
 
 // === DIALOGUE LOGIC ===
 function updateDialogue() {
   if (flower.collected) {
-    showMessage = "Luke (blue) - I brought you a flower cutie!\nDaniela (pink) - OMG THANK YOU SO MUCH!!!!";
+    showMessage = "Luke - I brought you a flower cutie!\nDaniela - OMG THANK YOU SO MUCH!!!!";
   } else {
-    showMessage = "Daniela (pink) - Hi cutey!\nLuke (blue) - You're the cutey!!!";
+    showMessage = "Daniela - Hi cutey!\nLuke - You're the cutey!!!";
   }
   messageIndex = 0;
   showTypedMessage = '';
@@ -241,6 +244,7 @@ function checkInteractions() {
     isTalking = false;
   }
 
+  // Collision with house
   if (player.x < house.x + house.w &&
       player.x + player.w > house.x &&
       player.y < house.y + house.h &&
@@ -254,22 +258,16 @@ function checkInteractions() {
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawWorldExtras();
-
   updateAndDrawHearts();
   updateMessageTyping();
-
   checkInteractions();
-  updateMessageTyping();
+  updateMovement();
 
-    updateMovement();
-  // Update position
   player.x += dx;
   player.y += dy;
-  // Clamp to canvas
   player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
   player.y = Math.max(0, Math.min(canvas.height - player.h, player.y));
 
-  // Draw player
   ctx.fillStyle = "blue";
   ctx.fillRect(player.x, player.y, player.w, player.h);
 

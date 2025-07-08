@@ -175,6 +175,21 @@ function generateDecorations() {
 }
 generateDecorations();
 
+const deer = { x: 100, y: 60, w: 8, h: 8, vx: 0.3, vy: 0.3, color: '#a0522d' };
+
+const CAR_SPEED = 20; // pixels per second
+const CAR_INTERVAL = 30000; // ms
+const car = {
+  x: 140 + 10 - 6,
+  y: canvas.height,
+  w: 12,
+  h: 8,
+  direction: -1,
+  active: true
+};
+let lastCarMove = Date.now();
+let lastCarSpawn = Date.now();
+
 const HEART_SPAWN_INTERVAL = 500;
 let showMessage = '';
 let showTypedMessage = '';
@@ -297,6 +312,42 @@ function updateAndDrawSmoke() {
   }
 }
 
+function updateDeer() {
+  deer.x += deer.vx;
+  deer.y += deer.vy;
+  if (deer.x < 0 || deer.x > canvas.width - deer.w) deer.vx *= -1;
+  if (deer.y < 0 || deer.y > canvas.height - deer.h) deer.vy *= -1;
+  if (Math.random() < 0.01) {
+    deer.vx = (Math.random() - 0.5) * 0.6;
+    deer.vy = (Math.random() - 0.5) * 0.6;
+  }
+}
+
+function updateCar() {
+  const now = Date.now();
+  if (car.active) {
+    const dt = (now - lastCarMove) / 1000;
+    lastCarMove = now;
+    car.y += car.direction * CAR_SPEED * dt;
+    if ((car.direction === -1 && car.y + car.h < 0) ||
+        (car.direction === 1 && car.y > canvas.height)) {
+      car.active = false;
+      lastCarSpawn = now;
+    }
+  } else if (now - lastCarSpawn >= CAR_INTERVAL) {
+    car.direction *= -1;
+    car.y = car.direction === -1 ? canvas.height : -car.h;
+    lastCarMove = now;
+    car.active = true;
+  }
+}
+
+function drawCar() {
+  if (!car.active) return;
+  ctx.fillStyle = 'red';
+  ctx.fillRect(car.x, car.y, car.w, car.h);
+}
+
 function drawFence() {
   ctx.fillStyle = "white";
   // top
@@ -331,6 +382,13 @@ function drawOutdoorWorld() {
   ctx.fillRect(doorX, doorY, pathW, 140 - doorY); // 140 is top of horizontal road
 
   drawFence();
+
+  updateCar();
+  drawCar();
+
+  updateDeer();
+  ctx.fillStyle = deer.color;
+  ctx.fillRect(deer.x, deer.y, deer.w, deer.h);
 
   for (const d of decorations) {
     if (d.type === 'tree') {
@@ -567,6 +625,15 @@ function checkInteractions() {
         player.x -= dx;
         player.y -= dy;
       }
+    }
+
+    if (car.active &&
+        player.x < car.x + car.w &&
+        player.x + player.w > car.x &&
+        player.y < car.y + car.h &&
+        player.y + player.h > car.y) {
+      player.x -= dx;
+      player.y -= dy;
     }
   }
 }

@@ -79,6 +79,20 @@ const ctx = canvas.getContext("2d");
 const player = { x: 20, y: 20, w: 10, h: 10, speed: 1.5 };
 const house = { x: 260, y: 50, w: 30, h: 30 };
 const chimney = { x: house.x + house.w - 6, y: house.y - 12, w: 4, h: 10 };
+const door = {
+  x: house.x + house.w / 3,
+  y: house.y + house.h / 2,
+  w: house.w / 3,
+  h: house.h / 2,
+};
+const scene = { current: 'outdoor' };
+const girlHomeImg = new Image();
+girlHomeImg.src = 'assets/GIRL HOME.png';
+
+const cats = [
+  { x: 140, y: 120, vx: 0.5, vy: 0.5, color: 'orange' },
+  { x: 160, y: 120, vx: -0.5, vy: 0.5, spotted: true },
+];
 const smokeParticles = [];
 let lastSmokeTime = 0;
 const SMOKE_SPAWN_INTERVAL = 200;
@@ -223,7 +237,7 @@ function drawFence() {
 }
 
 // === DRAW WORLD OBJECTS ===
-function drawWorldExtras() {
+function drawOutdoorWorld() {
   ctx.fillStyle = "#88c070";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -277,6 +291,38 @@ function drawWorldExtras() {
   }
 }
 
+function drawCat(cat) {
+  if (cat.spotted) {
+    ctx.fillStyle = 'white';
+    ctx.fillRect(cat.x, cat.y, 8, 8);
+    ctx.fillStyle = 'black';
+    ctx.fillRect(cat.x + 1, cat.y + 1, 2, 2);
+    ctx.fillRect(cat.x + 4, cat.y + 3, 2, 2);
+  } else {
+    ctx.fillStyle = cat.color;
+    ctx.fillRect(cat.x, cat.y, 8, 8);
+  }
+}
+
+function updateCats() {
+  for (const c of cats) {
+    c.x += c.vx;
+    c.y += c.vy;
+    if (c.x < 0 || c.x > canvas.width - 8) c.vx *= -1;
+    if (c.y < 0 || c.y > canvas.height - 8) c.vy *= -1;
+    if (Math.random() < 0.02) {
+      c.vx = (Math.random() - 0.5) * 1;
+      c.vy = (Math.random() - 0.5) * 1;
+    }
+  }
+}
+
+function drawIndoorWorld() {
+  ctx.drawImage(girlHomeImg, 0, 0, canvas.width, canvas.height);
+  updateCats();
+  for (const c of cats) drawCat(c);
+}
+
 // === DIALOGUE LOGIC ===
 function updateDialogue() {
   if (flower.collected) {
@@ -300,6 +346,19 @@ function updateMessageTyping() {
 
 // === INTERACTION ===
 function checkInteractions() {
+  if (scene.current === 'outdoor') {
+    if (player.x < door.x + door.w &&
+        player.x + player.w > door.x &&
+        player.y < door.y + door.h &&
+        player.y + player.h > door.y) {
+      scene.current = 'indoor';
+      player.x = canvas.width / 2 - player.w / 2;
+      player.y = canvas.height - 20;
+      return;
+    }
+  }
+  if (scene.current !== 'outdoor') return;
+
   if (!flower.collected &&
       player.x < flower.x + 5 &&
       player.x + player.w > flower.x &&
@@ -380,8 +439,12 @@ function checkInteractions() {
 // === MAIN GAME LOOP ===
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawWorldExtras();
-  updateAndDrawHearts();
+  if (scene.current === 'outdoor') {
+    drawOutdoorWorld();
+    updateAndDrawHearts();
+  } else {
+    drawIndoorWorld();
+  }
   updateMessageTyping();
   checkInteractions();
   updateMovement();

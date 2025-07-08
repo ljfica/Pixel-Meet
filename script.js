@@ -73,6 +73,10 @@ const player = { x: 20, y: 20, w: 10, h: 10, speed: 1.5 };
 const house = { x: 250, y: 50, w: 30, h: 30 };
 const flower = { x: 240, y: 120, collected: false };
 const daniela = { x: 250, y: 150 };
+// Heart particle effects
+const hearts = [];
+let lastHeartTime = 0;
+const HEART_SPAWN_INTERVAL = 3000; // ms
 let showMessage = '';
 let showTypedMessage = '';
 let messageIndex = 0;
@@ -111,6 +115,41 @@ function startMove(dir) {
 }
 function stopMove() {
   dx = 0; dy = 0;
+}
+
+function spawnHearts(npc) {
+  const count = 3 + Math.floor(Math.random() * 2); // 3 or 4
+  for (let i = 0; i < count; i++) {
+    hearts.push({
+      x: npc.x + 4 + (Math.random() * 4 - 2),
+      y: npc.y,
+      vx: (Math.random() - 0.5) * 0.2,
+      vy: -0.3 - Math.random() * 0.2,
+      life: 60,
+    });
+  }
+}
+
+function updateAndDrawHearts() {
+  const now = Date.now();
+  const near = Math.hypot(player.x - daniela.x, player.y - daniela.y) < 30;
+  if (near && now - lastHeartTime > HEART_SPAWN_INTERVAL) {
+    spawnHearts(daniela);
+    lastHeartTime = now;
+  }
+
+  for (let i = hearts.length - 1; i >= 0; i--) {
+    const h = hearts[i];
+    h.x += h.vx;
+    h.y += h.vy;
+    h.life--;
+    if (h.life <= 0) {
+      hearts.splice(i, 1);
+      continue;
+    }
+    ctx.fillStyle = 'pink';
+    ctx.fillRect(h.x, h.y, 2, 2);
+  }
 }
 
 // === DRAW WORLD OBJECTS ===
@@ -190,6 +229,7 @@ function checkInteractions() {
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawWorldExtras();
+  updateAndDrawHearts();
   updateMessageTyping();
   checkInteractions();
 

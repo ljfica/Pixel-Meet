@@ -96,6 +96,10 @@ const door = {
 };
 const scene = { current: 'outdoor' };
 const girlHomeImg = new Image();
+let girlHomeLoaded = false;
+girlHomeImg.addEventListener('load', () => {
+  girlHomeLoaded = true;
+});
 girlHomeImg.src = 'assets/GIRL HOME.png';
 
 const cats = [
@@ -483,7 +487,9 @@ function updateCats() {
 }
 
 function drawIndoorWorld() {
-  ctx.drawImage(girlHomeImg, 0, 0, canvas.width, canvas.height);
+  if (girlHomeLoaded) {
+    ctx.drawImage(girlHomeImg, 0, 0, canvas.width, canvas.height);
+  }
   updateCats();
   for (const c of cats) drawCat(c);
 }

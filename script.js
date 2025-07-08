@@ -231,11 +231,12 @@ function drawWorldExtras() {
   ctx.fillRect(140, 0, 20, 200);
   ctx.fillRect(0, 140, 300, 20);
 
-  // dirt path from road to house
+  // dirt path from horizontal road down to the house
   const pathW = 6;
   const doorX = house.x + house.w / 2 - pathW / 2;
+  const doorY = house.y + house.h;
   ctx.fillStyle = "#b5651d";
-  ctx.fillRect(160, house.y + house.h - pathW / 2, doorX - 160 + pathW, pathW);
+  ctx.fillRect(doorX, doorY, pathW, 140 - doorY); // 140 is top of horizontal road
 
   drawFence();
 

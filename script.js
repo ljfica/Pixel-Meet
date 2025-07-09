@@ -10,6 +10,24 @@
   const doorSound = document.getElementById('door-sound');
   const flowerPopup = document.getElementById('flower-popup');
 
+  const kittySprites = {};
+  const KITTY_ACTIONS = ['idle', 'walk_left', 'walk_right', 'walk_back'];
+  const KITTY_FRAME_COUNT = 4;
+  const KITTY_FRAME_DURATION = 200; // ms
+
+  (function loadKittySprites() {
+    const folder = 'assets/ORANGE CAT ANIMATIONS';
+    for (const action of KITTY_ACTIONS) {
+      kittySprites[action] = [];
+      for (let i = 1; i <= KITTY_FRAME_COUNT; i++) {
+        const img = new Image();
+        const num = String(i).padStart(2, '0');
+        img.src = `${folder}/cat_${action}_frame_${num}.png`;
+        kittySprites[action].push(img);
+      }
+    }
+  })();
+
   let keysPressed = new Set();
 
 document.addEventListener("keydown", (e) => {
@@ -106,24 +124,29 @@ const cats = [
   {
     x: 140,
     y: 120,
-    vx: 0.5,
-    vy: 0.5,
-    w: 8,
-    h: 8,
-    color: 'orange',
+    vx: 0,
+    vy: 0,
+    w: 16,
+    h: 16,
     name: 'Kitty',
-    dialogue: 'Kitty - MeROWWW'
+    dialogue: 'Kitty - MeROWWW',
+    sprites: kittySprites,
+    action: 'idle',
+    frame: 0,
+    lastFrameTime: Date.now(),
+    aiTimer: 0
   },
   {
     x: 160,
     y: 120,
-    vx: -0.5,
-    vy: 0.5,
+    vx: 0,
+    vy: 0,
     spotted: true,
     w: 8,
     h: 8,
     name: 'Cintas',
-    dialogue: 'Cintas - ROWRR, meowr :P'
+    dialogue: 'Cintas - ROWRR, meowr :P',
+    aiTimer: 0
   },
 ];
 const smokeParticles = [];
@@ -461,7 +484,13 @@ function drawOutdoorWorld() {
 }
 
 function drawCat(cat) {
-  if (cat.spotted) {
+  if (cat.sprites) {
+    const frames = cat.sprites[cat.action] || cat.sprites.idle;
+    const frameImg = frames[Math.floor(cat.frame) % frames.length];
+    if (frameImg && frameImg.complete) {
+      ctx.drawImage(frameImg, cat.x, cat.y, cat.w, cat.h);
+    }
+  } else if (cat.spotted) {
     ctx.fillStyle = 'white';
     ctx.fillRect(cat.x, cat.y, cat.w, cat.h);
     ctx.fillStyle = 'black';
@@ -475,13 +504,46 @@ function drawCat(cat) {
 
 function updateCats() {
   for (const c of cats) {
+    if (!c.aiTimer || --c.aiTimer <= 0) {
+      if (Math.random() < 0.3) {
+        c.vx = 0;
+        c.vy = 0;
+        c.aiTimer = 30 + Math.random() * 60;
+      } else {
+        const speed = 0.3;
+        if (Math.random() < 0.7) {
+          c.vx = (Math.random() < 0.5 ? -1 : 1) * speed;
+          c.vy = 0;
+        } else {
+          c.vx = 0;
+          c.vy = (Math.random() < 0.5 ? -1 : 1) * speed;
+        }
+        c.aiTimer = 60 + Math.random() * 120;
+      }
+    }
+
     c.x += c.vx;
     c.y += c.vy;
-    if (c.x < 0 || c.x > canvas.width - c.w) c.vx *= -1;
-    if (c.y < 0 || c.y > canvas.height - c.h) c.vy *= -1;
-    if (Math.random() < 0.02) {
-      c.vx = (Math.random() - 0.5) * 1;
-      c.vy = (Math.random() - 0.5) * 1;
+    if (c.x < 0) { c.x = 0; c.vx *= -1; }
+    if (c.x > canvas.width - c.w) { c.x = canvas.width - c.w; c.vx *= -1; }
+    if (c.y < 0) { c.y = 0; c.vy *= -1; }
+    if (c.y > canvas.height - c.h) { c.y = canvas.height - c.h; c.vy *= -1; }
+
+    if (c.sprites) {
+      const now = Date.now();
+      const absVx = Math.abs(c.vx);
+      const absVy = Math.abs(c.vy);
+      if (absVx < 0.05 && absVy < 0.05) {
+        c.action = 'idle';
+      } else if (absVx >= absVy) {
+        c.action = c.vx < 0 ? 'walk_left' : 'walk_right';
+      } else {
+        c.action = 'walk_back';
+      }
+      if (now - c.lastFrameTime > KITTY_FRAME_DURATION) {
+        c.frame = (c.frame + 1) % c.sprites[c.action].length;
+        c.lastFrameTime = now;
+      }
     }
   }
 }

@@ -150,6 +150,13 @@ const cats = [
   },
 ];
 const smokeParticles = [];
+const randomNames = ['Alex','Sam','Jamie','Taylor','Jordan','Casey','Morgan','Riley','Drew','Quinn'];
+function getRandomName() {
+  return randomNames[Math.floor(Math.random()*randomNames.length)];
+}
+const townNPCs = [];
+const farmNPCs = [];
+const campNPCs = [];
 let lastSmokeTime = 0;
 const SMOKE_SPAWN_INTERVAL = 200;
 const fence = { x: house.x - 15, y: house.y - 15, w: house.w + 30, h: house.h + 30 };
@@ -244,6 +251,72 @@ const townBuildings = [];
 const farmPlots = [];
 const campItems = { fire: { x: canvas.width / 2 - 4, y: canvas.height / 2 - 4 } };
 
+const farmHouse = { x: 20, y: 130, w: 30, h: 25 };
+const rockingChair = { x: farmHouse.x - 8, y: farmHouse.y + farmHouse.h - 10, w: 6, h: 10 };
+const cows = [];
+const campTents = [];
+const campSmokeParticles = [];
+const campFireParticles = [];
+
+function generateTownNPCs() {
+  const sayings = [
+    'Lovely weather for a stroll!',
+    'Have you tried the bakery rolls?',
+    "Don't step on the cracks!"
+  ];
+  for (let i = 0; i < 3; i++) {
+    const name = getRandomName();
+    townNPCs.push({
+      x: 40 + Math.random() * 220,
+      y: 40 + Math.random() * 120,
+      w: 10,
+      h: 10,
+      name,
+      dialogue: `${name} - ${sayings[Math.floor(Math.random()*sayings.length)]}`
+    });
+  }
+}
+
+function generateFarmNPCs() {
+  const name = getRandomName();
+  farmNPCs.push({
+    x: farmHouse.x + farmHouse.w + 10,
+    y: farmHouse.y + 5,
+    w: 10,
+    h: 10,
+    name,
+    dialogue: `${name} - Well howdy! Them plants sure do grow purty!`
+  });
+  for (let i = 0; i < 3; i++) {
+    cows.push({
+      x: 60 + i * 20,
+      y: 40 + Math.random() * 40,
+      w: 8,
+      h: 8
+    });
+  }
+}
+
+function generateCampNPCs() {
+  const sayings = [
+    'I love roasting marshmallows!',
+    'The stars are amazing!',
+    'Nature is the best playground!'
+  ];
+  for (let i = 0; i < 2; i++) {
+    const name = getRandomName();
+    campNPCs.push({
+      x: 80 + i * 40,
+      y: 130,
+      w: 10,
+      h: 10,
+      name,
+      dialogue: `${name} - ${sayings[Math.floor(Math.random()*sayings.length)]}`
+    });
+    campTents.push({ x: 70 + i * 40, y: 120, w: 20, h: 15 });
+  }
+}
+
 function generateForestTrees() {
   for (let i = 0; i < 12; i++) {
     forestTrees.push({
@@ -254,12 +327,16 @@ function generateForestTrees() {
 }
 
 function generateTownBuildings() {
+  const types = ['home', 'store'];
   for (let i = 0; i < 6; i++) {
     const w = 20;
     const h = 20;
     townBuildings.push({
       x: 30 + Math.random() * (canvas.width - w - 30),
-      y: Math.random() * (canvas.height - h)
+      y: Math.random() * (canvas.height - h),
+      w,
+      h,
+      type: types[Math.floor(Math.random()*types.length)]
     });
   }
 }
@@ -278,6 +355,9 @@ function generateFarmPlots() {
 generateForestTrees();
 generateTownBuildings();
 generateFarmPlots();
+generateTownNPCs();
+generateFarmNPCs();
+generateCampNPCs();
 
 const HEART_SPAWN_INTERVAL = 500;
 let showMessage = '';
@@ -401,6 +481,73 @@ function updateAndDrawSmoke() {
     }
     ctx.fillStyle = `rgba(200,200,200,${s.alpha})`;
     ctx.fillRect(s.x, s.y, 2, 2);
+  }
+}
+
+function spawnCampSmoke() {
+  campSmokeParticles.push({
+    x: campItems.fire.x + 4,
+    y: campItems.fire.y,
+    vx: (Math.random() - 0.5) * 0.1,
+    vy: -0.2 - Math.random() * 0.1,
+    life: 50,
+    alpha: 1
+  });
+}
+
+let lastCampSmoke = 0;
+function updateAndDrawCampSmoke() {
+  const now = Date.now();
+  if (now - lastCampSmoke > 200) {
+    spawnCampSmoke();
+    lastCampSmoke = now;
+  }
+  for (let i = campSmokeParticles.length - 1; i >= 0; i--) {
+    const s = campSmokeParticles[i];
+    s.x += s.vx;
+    s.y += s.vy;
+    s.life--;
+    s.alpha -= 0.02;
+    if (s.life <= 0 || s.alpha <= 0) {
+      campSmokeParticles.splice(i, 1);
+      continue;
+    }
+    ctx.fillStyle = `rgba(200,200,200,${s.alpha})`;
+    ctx.fillRect(s.x, s.y, 2, 2);
+  }
+}
+
+function spawnCampFireParticle() {
+  campFireParticles.push({
+    x: campItems.fire.x + 4,
+    y: campItems.fire.y + 4,
+    vx: (Math.random() - 0.5) * 0.1,
+    vy: -0.3 - Math.random() * 0.2,
+    life: 30,
+    alpha: 1,
+    color: Math.random() > 0.5 ? 'orange' : 'yellow'
+  });
+}
+
+let lastCampFire = 0;
+function updateAndDrawCampFire() {
+  const now = Date.now();
+  if (now - lastCampFire > 100) {
+    spawnCampFireParticle();
+    lastCampFire = now;
+  }
+  for (let i = campFireParticles.length - 1; i >= 0; i--) {
+    const p = campFireParticles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+    p.alpha -= 0.03;
+    if (p.life <= 0 || p.alpha <= 0) {
+      campFireParticles.splice(i, 1);
+      continue;
+    }
+    ctx.fillStyle = `rgba(${p.color === 'orange' ? '255,140,0' : '255,255,0'},${p.alpha})`;
+    ctx.fillRect(p.x, p.y, 2, 2);
   }
 }
 
@@ -541,11 +688,18 @@ function drawForestWorld() {
 function drawTownWorld() {
   ctx.fillStyle = '#777';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#444';
-  ctx.fillRect(0, 0, 20, canvas.height);
-  ctx.fillStyle = '#b5651d';
+  ctx.fillStyle = '#555';
+  ctx.fillRect(0, 90, canvas.width, 20);
+  ctx.fillRect(140, 0, 20, canvas.height);
   for (const b of townBuildings) {
-    ctx.fillRect(b.x, b.y, 20, 20);
+    ctx.fillStyle = b.type === 'home' ? '#8b0000' : '#4444aa';
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+  }
+  ctx.fillStyle = '#b5651d';
+  ctx.fillRect(60, 90, 180, 6);
+  for (const n of townNPCs) {
+    ctx.fillStyle = '#ffeeaa';
+    ctx.fillRect(n.x, n.y, n.w, n.h);
   }
 }
 
@@ -554,9 +708,33 @@ function drawFarmWorld() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#444';
   ctx.fillRect(canvas.width - 20, 0, 20, canvas.height);
+
+  ctx.fillStyle = '#8b4513';
+  ctx.fillRect(farmHouse.x, farmHouse.y, farmHouse.w, farmHouse.h);
+  ctx.fillStyle = '#b5651d';
+  ctx.fillRect(rockingChair.x, rockingChair.y, rockingChair.w, rockingChair.h);
+
   ctx.fillStyle = '#a0522d';
   for (const p of farmPlots) {
     ctx.fillRect(p.x, p.y, p.w, p.h);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(p.x, p.y - 2, p.w, 2);
+    ctx.fillRect(p.x, p.y + p.h, p.w, 2);
+    ctx.fillRect(p.x - 2, p.y, 2, p.h);
+    ctx.fillRect(p.x + p.w, p.y, 2, p.h);
+    ctx.fillStyle = '#a0522d';
+  }
+
+  for (const c of cows) {
+    ctx.fillStyle = 'white';
+    ctx.fillRect(c.x, c.y, c.w, c.h);
+    ctx.fillStyle = 'black';
+    ctx.fillRect(c.x + 1, c.y + 1, 2, 2);
+  }
+
+  for (const n of farmNPCs) {
+    ctx.fillStyle = '#ffeeaa';
+    ctx.fillRect(n.x, n.y, n.w, n.h);
   }
 }
 
@@ -565,9 +743,27 @@ function drawCampWorld() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#444';
   ctx.fillRect(140, 0, 20, 20);
+
+  for (const t of campTents) {
+    ctx.fillStyle = '#aa0000';
+    ctx.beginPath();
+    ctx.moveTo(t.x, t.y);
+    ctx.lineTo(t.x + t.w / 2, t.y - t.h);
+    ctx.lineTo(t.x + t.w, t.y);
+    ctx.closePath();
+    ctx.fill();
+  }
+
   const f = campItems.fire;
-  ctx.fillStyle = '#ff4500';
-  ctx.fillRect(f.x, f.y, 8, 8);
+  ctx.fillStyle = '#663300';
+  ctx.fillRect(f.x - 2, f.y + 6, 12, 3);
+  updateAndDrawCampFire();
+  updateAndDrawCampSmoke();
+
+  for (const n of campNPCs) {
+    ctx.fillStyle = '#ffeeaa';
+    ctx.fillRect(n.x, n.y, n.w, n.h);
+  }
 }
 
 function drawCat(cat) {
@@ -849,6 +1045,57 @@ function checkInteractions() {
       }
     }
     }
+
+  if (!talked && scene.current === 'town') {
+    for (const n of townNPCs) {
+      const nd = Math.hypot(player.x - n.x, player.y - n.y);
+      if (nd < talkDistance) {
+        if (!isTalking || showMessage !== n.dialogue) {
+          showMessage = n.dialogue;
+          showTypedMessage = '';
+          messageIndex = 0;
+        }
+        talkTarget = n;
+        isTalking = true;
+        talked = true;
+        break;
+      }
+    }
+  }
+
+  if (!talked && scene.current === 'farm') {
+    for (const n of farmNPCs) {
+      const nd = Math.hypot(player.x - n.x, player.y - n.y);
+      if (nd < talkDistance) {
+        if (!isTalking || showMessage !== n.dialogue) {
+          showMessage = n.dialogue;
+          showTypedMessage = '';
+          messageIndex = 0;
+        }
+        talkTarget = n;
+        isTalking = true;
+        talked = true;
+        break;
+      }
+    }
+  }
+
+  if (!talked && scene.current === 'camp') {
+    for (const n of campNPCs) {
+      const nd = Math.hypot(player.x - n.x, player.y - n.y);
+      if (nd < talkDistance) {
+        if (!isTalking || showMessage !== n.dialogue) {
+          showMessage = n.dialogue;
+          showTypedMessage = '';
+          messageIndex = 0;
+        }
+        talkTarget = n;
+        isTalking = true;
+        talked = true;
+        break;
+      }
+    }
+  }
   if (!talked) {
     if (isTalking) {
       if (talkTarget === hunter) {

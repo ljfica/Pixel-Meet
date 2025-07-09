@@ -689,14 +689,14 @@ function drawTownWorld() {
   ctx.fillStyle = '#777';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#555';
-  ctx.fillRect(0, 90, canvas.width, 20);
+  ctx.fillRect(0, 140, canvas.width, 20);
   ctx.fillRect(140, 0, 20, canvas.height);
   for (const b of townBuildings) {
     ctx.fillStyle = b.type === 'home' ? '#8b0000' : '#4444aa';
     ctx.fillRect(b.x, b.y, b.w, b.h);
   }
   ctx.fillStyle = '#b5651d';
-  ctx.fillRect(60, 90, 180, 6);
+  ctx.fillRect(60, 140, 180, 6);
   for (const n of townNPCs) {
     ctx.fillStyle = '#ffeeaa';
     ctx.fillRect(n.x, n.y, n.w, n.h);
@@ -779,7 +779,7 @@ function drawCat(cat) {
     ctx.fillStyle = 'black';
     ctx.fillRect(cat.x + 1, cat.y + 1, 2, 2);
     ctx.fillRect(cat.x + 4, cat.y + 3, 2, 2);
-  } else {
+  } else if (scene.current === 'outdoor') {
     ctx.fillStyle = cat.color;
     ctx.fillRect(cat.x, cat.y, cat.w, cat.h);
   }
@@ -931,7 +931,7 @@ function updateDialogue() {
     } else {
       showMessage = "Luke - I brought you a flower cutie!\nDaniela - OMG THANK YOU SO MUCH!!!!";
     }
-  } else {
+  } else if (scene.current === 'outdoor') {
     showMessage = "Daniela - Hi cutey!\nLuke - You're the cutey!!!";
   }
   messageIndex = 0;
@@ -957,7 +957,7 @@ function checkInteractions() {
       exitIndoor();
       return;
     }
-  } else {
+  } else if (scene.current === 'outdoor') {
     if (player.x < door.x + door.w &&
         player.x + player.w > door.x &&
         player.y < door.y + door.h &&

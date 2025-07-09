@@ -292,7 +292,9 @@ function generateFarmNPCs() {
       x: 60 + i * 20,
       y: 50 + Math.random() * 30,
       w: 12,
-      h: 8
+      h: 8,
+      vx: 0,
+      vy: 0
     });
   }
 }
@@ -593,6 +595,36 @@ function updateCar() {
   }
 }
 
+function updateCows() {
+  for (const c of cows) {
+    if (!c.aiTimer || --c.aiTimer <= 0) {
+      c.vx = (Math.random() - 0.5) * 0.3;
+      c.vy = (Math.random() - 0.5) * 0.3;
+      c.aiTimer = 60 + Math.random() * 60;
+    }
+
+    const dist = Math.hypot(player.x - c.x, player.y - c.y);
+    if (dist < talkDistance) {
+      const angle = Math.atan2(c.y - player.y, c.x - player.x);
+      const speed = 0.4;
+      c.vx = Math.cos(angle) * speed;
+      c.vy = Math.sin(angle) * speed;
+    }
+
+    c.x += c.vx;
+    c.y += c.vy;
+
+    const minX = 30;
+    const maxX = 180 - c.w;
+    const minY = 40;
+    const maxY = 120 - c.h;
+    if (c.x < minX) { c.x = minX; c.vx *= -1; }
+    if (c.x > maxX) { c.x = maxX; c.vx *= -1; }
+    if (c.y < minY) { c.y = minY; c.vy *= -1; }
+    if (c.y > maxY) { c.y = maxY; c.vy *= -1; }
+  }
+}
+
 function drawCar() {
   if (!car.active) return;
   ctx.fillStyle = 'red';
@@ -712,9 +744,12 @@ function drawFarmWorld() {
         y: 40 + Math.random() * 40,
         w: 8,
         h: 8,
+        vx: 0,
+        vy: 0,
       });
     }
   }
+  updateCows();
   ctx.fillStyle = '#c2b280';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#444';

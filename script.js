@@ -124,6 +124,9 @@ const cats = [
   {
     x: 140,
     y: 120,
+    vx: 0,
+    vy: 0,
+=======
     vx: 0.5,
     vy: 0.5,
     w: 16,
@@ -133,18 +136,22 @@ const cats = [
     sprites: kittySprites,
     action: 'idle',
     frame: 0,
+    lastFrameTime: Date.now(),
+    aiTimer: 0
+=======
     lastFrameTime: Date.now()
   },
   {
     x: 160,
     y: 120,
-    vx: -0.5,
-    vy: 0.5,
+    vx: 0,
+    vy: 0,
     spotted: true,
     w: 8,
     h: 8,
     name: 'Cintas',
-    dialogue: 'Cintas - ROWRR, meowr :P'
+    dialogue: 'Cintas - ROWRR, meowr :P',
+    aiTimer: 0
   },
 ];
 const smokeParticles = [];
@@ -502,13 +509,46 @@ function drawCat(cat) {
 
 function updateCats() {
   for (const c of cats) {
+    if (!c.aiTimer || --c.aiTimer <= 0) {
+      if (Math.random() < 0.3) {
+        c.vx = 0;
+        c.vy = 0;
+        c.aiTimer = 30 + Math.random() * 60;
+      } else {
+        const speed = 0.3;
+        if (Math.random() < 0.7) {
+          c.vx = (Math.random() < 0.5 ? -1 : 1) * speed;
+          c.vy = 0;
+        } else {
+          c.vx = 0;
+          c.vy = (Math.random() < 0.5 ? -1 : 1) * speed;
+        }
+        c.aiTimer = 60 + Math.random() * 120;
+      }
+    }
+
     c.x += c.vx;
     c.y += c.vy;
-    if (c.x < 0 || c.x > canvas.width - c.w) c.vx *= -1;
-    if (c.y < 0 || c.y > canvas.height - c.h) c.vy *= -1;
-    if (Math.random() < 0.02) {
-      c.vx = (Math.random() - 0.5) * 1;
-      c.vy = (Math.random() - 0.5) * 1;
+    if (c.x < 0) { c.x = 0; c.vx *= -1; }
+    if (c.x > canvas.width - c.w) { c.x = canvas.width - c.w; c.vx *= -1; }
+    if (c.y < 0) { c.y = 0; c.vy *= -1; }
+    if (c.y > canvas.height - c.h) { c.y = canvas.height - c.h; c.vy *= -1; }
+
+    if (c.sprites) {
+      const now = Date.now();
+      const absVx = Math.abs(c.vx);
+      const absVy = Math.abs(c.vy);
+      if (absVx < 0.05 && absVy < 0.05) {
+        c.action = 'idle';
+      } else if (absVx >= absVy) {
+        c.action = c.vx < 0 ? 'walk_left' : 'walk_right';
+      } else {
+        c.action = 'walk_back';
+      }
+      if (now - c.lastFrameTime > KITTY_FRAME_DURATION) {
+        c.frame = (c.frame + 1) % c.sprites[c.action].length;
+        c.lastFrameTime = now;
+      }
     }
 
     if (c.sprites) {

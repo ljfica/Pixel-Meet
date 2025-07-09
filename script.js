@@ -238,6 +238,47 @@ const car = {
 let lastCarMove = Date.now();
 let lastCarSpawn = Date.now();
 
+// === DECOR FOR ADDITIONAL MAPS ===
+const forestTrees = [];
+const townBuildings = [];
+const farmPlots = [];
+const campItems = { fire: { x: canvas.width / 2 - 4, y: canvas.height / 2 - 4 } };
+
+function generateForestTrees() {
+  for (let i = 0; i < 12; i++) {
+    forestTrees.push({
+      x: Math.random() * (canvas.width - 8),
+      y: Math.random() * (canvas.height - 30)
+    });
+  }
+}
+
+function generateTownBuildings() {
+  for (let i = 0; i < 6; i++) {
+    const w = 20;
+    const h = 20;
+    townBuildings.push({
+      x: 30 + Math.random() * (canvas.width - w - 30),
+      y: Math.random() * (canvas.height - h)
+    });
+  }
+}
+
+function generateFarmPlots() {
+  for (let i = 0; i < 4; i++) {
+    farmPlots.push({
+      x: 30 + i * 40,
+      y: 40,
+      w: 30,
+      h: 80
+    });
+  }
+}
+
+generateForestTrees();
+generateTownBuildings();
+generateFarmPlots();
+
 const HEART_SPAWN_INTERVAL = 500;
 let showMessage = '';
 let showTypedMessage = '';
@@ -481,6 +522,52 @@ function drawOutdoorWorld() {
 
   ctx.fillStyle = daniela.color;
   ctx.fillRect(daniela.x, daniela.y, daniela.w, daniela.h);
+}
+
+function drawForestWorld() {
+  ctx.fillStyle = '#116611';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#444';
+  ctx.fillRect(140, canvas.height - 20, 20, 20);
+  ctx.fillStyle = '#228B22';
+  for (const t of forestTrees) {
+    ctx.fillRect(t.x, t.y, 8, 10);
+    ctx.fillStyle = '#8B4513';
+    ctx.fillRect(t.x + 3, t.y + 10, 2, 4);
+    ctx.fillStyle = '#228B22';
+  }
+}
+
+function drawTownWorld() {
+  ctx.fillStyle = '#777';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#444';
+  ctx.fillRect(0, 0, 20, canvas.height);
+  ctx.fillStyle = '#b5651d';
+  for (const b of townBuildings) {
+    ctx.fillRect(b.x, b.y, 20, 20);
+  }
+}
+
+function drawFarmWorld() {
+  ctx.fillStyle = '#c2b280';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#444';
+  ctx.fillRect(canvas.width - 20, 0, 20, canvas.height);
+  ctx.fillStyle = '#a0522d';
+  for (const p of farmPlots) {
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+  }
+}
+
+function drawCampWorld() {
+  ctx.fillStyle = '#355e3b';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#444';
+  ctx.fillRect(140, 0, 20, 20);
+  const f = campItems.fire;
+  ctx.fillStyle = '#ff4500';
+  ctx.fillRect(f.x, f.y, 8, 8);
 }
 
 function drawCat(cat) {
@@ -828,6 +915,82 @@ function checkInteractions() {
       player.x -= dx;
       player.y -= dy;
     }
+
+    const inVertRoad = player.x + player.w > 140 && player.x < 160;
+    const inHorzRoad = player.y + player.h > 140 && player.y < 160;
+    if (player.y <= 0 && inVertRoad) {
+      scene.current = 'forest';
+      player.y = canvas.height - player.h - 1;
+      isTalking = false;
+      talkTarget = null;
+      showTypedMessage = '';
+      return;
+    }
+    if (player.y + player.h >= canvas.height && inVertRoad) {
+      scene.current = 'camp';
+      player.y = 1;
+      isTalking = false;
+      talkTarget = null;
+      showTypedMessage = '';
+      return;
+    }
+    if (player.x <= 0 && inHorzRoad) {
+      scene.current = 'farm';
+      player.x = canvas.width - player.w - 1;
+      isTalking = false;
+      talkTarget = null;
+      showTypedMessage = '';
+      return;
+    }
+    if (player.x + player.w >= canvas.width && inHorzRoad) {
+      scene.current = 'town';
+      player.x = 1;
+      isTalking = false;
+      talkTarget = null;
+      showTypedMessage = '';
+      return;
+    }
+  }
+  else if (scene.current === 'forest') {
+    const inVertRoad = player.x + player.w > 140 && player.x < 160;
+    if (player.y + player.h >= canvas.height && inVertRoad) {
+      scene.current = 'outdoor';
+      player.y = 1;
+      isTalking = false;
+      talkTarget = null;
+      showTypedMessage = '';
+      return;
+    }
+  } else if (scene.current === 'camp') {
+    const inVertRoad = player.x + player.w > 140 && player.x < 160;
+    if (player.y <= 0 && inVertRoad) {
+      scene.current = 'outdoor';
+      player.y = canvas.height - player.h - 1;
+      isTalking = false;
+      talkTarget = null;
+      showTypedMessage = '';
+      return;
+    }
+  } else if (scene.current === 'farm') {
+    const inHorzRoad = player.y + player.h > 140 && player.y < 160;
+    if (player.x + player.w >= canvas.width && inHorzRoad) {
+      scene.current = 'outdoor';
+      player.x = 1;
+      isTalking = false;
+      talkTarget = null;
+      showTypedMessage = '';
+      return;
+    }
+  } else if (scene.current === 'town') {
+    const inHorzRoad = player.y + player.h > 140 && player.y < 160;
+    if (player.x <= 0 && inHorzRoad) {
+      scene.current = 'outdoor';
+      player.x = canvas.width - player.w - 1;
+      isTalking = false;
+      talkTarget = null;
+      showTypedMessage = '';
+      return;
+    }
   }
 }
 
@@ -837,6 +1000,14 @@ function gameLoop() {
   if (scene.current === 'outdoor') {
     drawOutdoorWorld();
     updateAndDrawHearts();
+  } else if (scene.current === 'forest') {
+    drawForestWorld();
+  } else if (scene.current === 'town') {
+    drawTownWorld();
+  } else if (scene.current === 'farm') {
+    drawFarmWorld();
+  } else if (scene.current === 'camp') {
+    drawCampWorld();
   } else {
     drawIndoorWorld();
   }

@@ -705,6 +705,16 @@ function drawTownWorld() {
 }
 
 function drawFarmWorld() {
+  if (cows.length === 0) {
+    for (let i = 0; i < 3; i++) {
+      cows.push({
+        x: 60 + i * 20,
+        y: 40 + Math.random() * 40,
+        w: 8,
+        h: 8,
+      });
+    }
+  }
   ctx.fillStyle = '#c2b280';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#444';

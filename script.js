@@ -126,6 +126,9 @@ const cats = [
     y: 120,
     vx: 0,
     vy: 0,
+=======
+    vx: 0.5,
+    vy: 0.5,
     w: 16,
     h: 16,
     name: 'Kitty',
@@ -135,6 +138,8 @@ const cats = [
     frame: 0,
     lastFrameTime: Date.now(),
     aiTimer: 0
+=======
+    lastFrameTime: Date.now()
   },
   {
     x: 160,
@@ -534,6 +539,23 @@ function updateCats() {
       const absVx = Math.abs(c.vx);
       const absVy = Math.abs(c.vy);
       if (absVx < 0.05 && absVy < 0.05) {
+        c.action = 'idle';
+      } else if (absVx >= absVy) {
+        c.action = c.vx < 0 ? 'walk_left' : 'walk_right';
+      } else {
+        c.action = 'walk_back';
+      }
+      if (now - c.lastFrameTime > KITTY_FRAME_DURATION) {
+        c.frame = (c.frame + 1) % c.sprites[c.action].length;
+        c.lastFrameTime = now;
+      }
+    }
+
+    if (c.sprites) {
+      const now = Date.now();
+      const absVx = Math.abs(c.vx);
+      const absVy = Math.abs(c.vy);
+      if (absVx < 0.1 && absVy < 0.1) {
         c.action = 'idle';
       } else if (absVx >= absVy) {
         c.action = c.vx < 0 ? 'walk_left' : 'walk_right';

@@ -169,6 +169,19 @@ const gate = {
 let gateOpen = false;
 let gateTimer = 0;
 const GATE_OPEN_TIME = 60;
+
+const helloKittyBushImg = new Image();
+let helloKittyBushLoaded = false;
+helloKittyBushImg.addEventListener('load', () => {
+  helloKittyBushLoaded = true;
+});
+helloKittyBushImg.src = 'assets/HELLO KITTY BUSH.png';
+const helloKittyBush = {
+  x: gate.x + gate.w + 4,
+  y: gate.y - 14,
+  w: 14,
+  h: 14
+};
 // Flower near the top left of the house, adjusted position
 const flower = {
   // moved 8 squares left and 7 squares up from the
@@ -636,6 +649,9 @@ function drawOutdoorWorld() {
   ctx.fillRect(doorX, doorY, pathW, 140 - doorY); // 140 is top of horizontal road
 
   drawFence();
+  if (helloKittyBushLoaded) {
+    ctx.drawImage(helloKittyBushImg, helloKittyBush.x, helloKittyBush.y, helloKittyBush.w, helloKittyBush.h);
+  }
 
   updateCar();
   drawCar();

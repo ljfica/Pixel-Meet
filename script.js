@@ -370,7 +370,8 @@ const talkDistance = 30;
 let talkTarget = null;
 let dx = 0, dy = 0;
 // timer for luke forgetting flowers message
-let talkDanielaStart = null;
+// timers for Luke forgetting the flower
+let forgotFlowersStart = null;
 let forgotFlowersActive = false;
 let forgotFlowersEnd = 0;
 let danielaTalkAfterFlowersCount = 0;
@@ -896,7 +897,7 @@ function drawForgotFlowersBubble() {
 }
 
 function drawHunterFollowupBubble() {
-  if (!hunterFollowActive) return;
+  if (!hunterFollowActive || scene.current !== 'outdoor') return;
   const message = "Hunter - That's what I thought hehe.";
   ctx.font = '12px monospace';
   ctx.textBaseline = 'top';
@@ -967,6 +968,8 @@ function checkInteractions() {
         doorSound.play().catch(() => {});
       }
       scene.current = 'indoor';
+      hunterFollowStart = null;
+      hunterFollowActive = false;
       player.x = canvas.width / 2 - player.w / 2;
       player.y = canvas.height - 20;
       isTalking = false;
@@ -980,6 +983,8 @@ function checkInteractions() {
         player.y < flower.y + 5 &&
         player.y + player.h > flower.y) {
       flower.collected = true;
+      forgotFlowersStart = null;
+      forgotFlowersActive = false;
       if (pickupSound) {
         danielaTalkAfterFlowersCount = 0;
         pickupSound.currentTime = 0;
@@ -1004,7 +1009,6 @@ function checkInteractions() {
         talkTarget = cat;
         isTalking = true;
         talked = true;
-        talkDanielaStart = null;
         break;
       }
     }
@@ -1040,9 +1044,6 @@ function checkInteractions() {
       talkTarget = daniela;
       isTalking = true;
       talked = true;
-      if (!flower.collected && !talkDanielaStart) {
-        talkDanielaStart = Date.now();
-      }
     }
     }
 
@@ -1100,13 +1101,14 @@ function checkInteractions() {
     if (isTalking) {
       if (talkTarget === hunter) {
         hunterFollowStart = Date.now();
+      } else if (talkTarget === daniela && !flower.collected) {
+        forgotFlowersStart = Date.now();
       }
       showTypedMessage = '';
       messageIndex = 0;
     }
     isTalking = false;
     talkTarget = null;
-    talkDanielaStart = null;
   }
 
   if (scene.current === 'outdoor') {
@@ -1167,6 +1169,8 @@ function checkInteractions() {
     const inHorzRoad = player.y + player.h > 140 && player.y < 160;
     if (player.y <= 0 && inVertRoad) {
       scene.current = 'forest';
+      hunterFollowStart = null;
+      hunterFollowActive = false;
       player.y = canvas.height - player.h - 1;
       isTalking = false;
       talkTarget = null;
@@ -1175,6 +1179,8 @@ function checkInteractions() {
     }
     if (player.y + player.h >= canvas.height && inVertRoad) {
       scene.current = 'camp';
+      hunterFollowStart = null;
+      hunterFollowActive = false;
       player.y = 1;
       isTalking = false;
       talkTarget = null;
@@ -1183,6 +1189,8 @@ function checkInteractions() {
     }
     if (player.x <= 0 && inHorzRoad) {
       scene.current = 'farm';
+      hunterFollowStart = null;
+      hunterFollowActive = false;
       player.x = canvas.width - player.w - 1;
       isTalking = false;
       talkTarget = null;
@@ -1191,6 +1199,8 @@ function checkInteractions() {
     }
     if (player.x + player.w >= canvas.width && inHorzRoad) {
       scene.current = 'town';
+      hunterFollowStart = null;
+      hunterFollowActive = false;
       player.x = 1;
       isTalking = false;
       talkTarget = null;
@@ -1269,10 +1279,10 @@ function gameLoop() {
   checkInteractions();
 
   const now = Date.now();
-  if (talkDanielaStart && now - talkDanielaStart >= 3000) {
+  if (forgotFlowersStart && now - forgotFlowersStart >= 2000) {
     forgotFlowersActive = true;
     forgotFlowersEnd = now + 2000;
-    talkDanielaStart = null;
+    forgotFlowersStart = null;
   }
   if (forgotFlowersActive && now >= forgotFlowersEnd) {
     forgotFlowersActive = false;

@@ -290,8 +290,8 @@ function generateFarmNPCs() {
   for (let i = 0; i < 3; i++) {
     cows.push({
       x: 60 + i * 20,
-      y: 40 + Math.random() * 40,
-      w: 8,
+      y: 50 + Math.random() * 30,
+      w: 12,
       h: 8
     });
   }
@@ -726,18 +726,24 @@ function drawFarmWorld() {
     ctx.fillStyle = '#a0522d';
   }
 
-  for (const c of cows) {
-    ctx.fillStyle = 'white';
-    ctx.fillRect(c.x, c.y, c.w, c.h);
-    ctx.fillStyle = 'black';
-    ctx.fillRect(c.x + 1, c.y + 1, 2, 2);
-  }
+  drawCows();
 
   for (const n of farmNPCs) {
     ctx.fillStyle = '#ffeeaa';
     ctx.fillRect(n.x, n.y, n.w, n.h);
   }
 }
+function drawCows() {
+  for (const c of cows) {
+    ctx.fillStyle = "white";
+    ctx.fillRect(c.x, c.y, c.w, c.h);
+    ctx.strokeStyle = "black";
+    ctx.strokeRect(c.x, c.y, c.w, c.h);
+    ctx.fillStyle = "black";
+    ctx.fillRect(c.x + 2, c.y + 2, 2, 2);
+  }
+}
+
 
 function drawCampWorld() {
   ctx.fillStyle = '#355e3b';

@@ -6,6 +6,7 @@
   const ctx = canvas.getContext('2d');
   const startScreenEl = document.getElementById('startScreen');
   const bgMusic = document.getElementById('bg-music');
+  const forestMusic = document.getElementById('forest-music');
   const pickupSound = document.getElementById('pickup-sound');
   const doorSound = document.getElementById('door-sound');
   const flowerPopup = document.getElementById('flower-popup');
@@ -394,6 +395,12 @@ function exitIndoor() {
 startScreenEl.addEventListener('click', () => {
   startScreenEl.style.display = 'none';
   if (bgMusic && bgMusic.play) bgMusic.play().catch(() => {});
+  if (forestMusic && forestMusic.play) {
+    forestMusic.play().then(() => {
+      forestMusic.pause();
+      forestMusic.currentTime = 0;
+    }).catch(() => {});
+  }
 });
 document.body.addEventListener('click', () => {
   if (bgMusic && bgMusic.paused) {
@@ -1188,6 +1195,11 @@ function checkInteractions() {
       hunterFollowStart = null;
       hunterFollowActive = false;
       player.y = canvas.height - player.h - 1;
+      if (bgMusic) bgMusic.pause();
+      if (forestMusic) {
+        forestMusic.currentTime = 0;
+        forestMusic.play().catch(() => {});
+      }
       isTalking = false;
       talkTarget = null;
       showTypedMessage = '';
@@ -1224,17 +1236,19 @@ function checkInteractions() {
       return;
     }
   }
-  else if (scene.current === 'forest') {
-    const inVertRoad = player.x + player.w > 140 && player.x < 160;
-    if (player.y + player.h >= canvas.height && inVertRoad) {
-      scene.current = 'outdoor';
-      player.y = 1;
-      isTalking = false;
-      talkTarget = null;
-      showTypedMessage = '';
-      return;
-    }
-  } else if (scene.current === 'camp') {
+    else if (scene.current === 'forest') {
+      const inVertRoad = player.x + player.w > 140 && player.x < 160;
+      if (player.y + player.h >= canvas.height && inVertRoad) {
+        scene.current = 'outdoor';
+        player.y = 1;
+        if (forestMusic) forestMusic.pause();
+        if (bgMusic && bgMusic.paused) bgMusic.play().catch(() => {});
+        isTalking = false;
+        talkTarget = null;
+        showTypedMessage = '';
+        return;
+      }
+    } else if (scene.current === 'camp') {
     const inVertRoad = player.x + player.w > 140 && player.x < 160;
     if (player.y <= 0 && inVertRoad) {
       scene.current = 'outdoor';

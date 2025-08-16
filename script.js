@@ -10,6 +10,7 @@
   const pickupSound = document.getElementById('pickup-sound');
   const doorSound = document.getElementById('door-sound');
   const flowerPopup = document.getElementById('flower-popup');
+  const inventoryEl = document.getElementById('inventory');
 
   const kittySprites = {};
   const KITTY_ACTIONS = ['idle', 'walk_left', 'walk_right', 'walk_back'];
@@ -36,6 +37,24 @@ document.addEventListener("keydown", (e) => {
 });
 document.addEventListener("keyup", (e) => {
   keysPressed.delete(e.key.toLowerCase());
+});
+
+canvas.addEventListener('click', (e) => {
+  if (scene.current !== 'forest' || !inventory.axe) return;
+  const rect = canvas.getBoundingClientRect();
+  const cx = (e.clientX - rect.left) * canvas.width / rect.width;
+  const cy = (e.clientY - rect.top) * canvas.height / rect.height;
+  for (const t of forestTrees) {
+    if (t.chopped) continue;
+    if (cx >= t.x && cx <= t.x + 8 && cy >= t.y && cy <= t.y + 14) {
+      t.hits++;
+      if (t.hits >= 3) {
+        t.chopped = true;
+        logs.push({ x: t.x, y: t.y + 12, w: 8, h: 4 });
+      }
+      break;
+    }
+  }
 });
 
 function updateMovement() {
@@ -81,6 +100,13 @@ function getWrappedLines(context, text, maxWidth) {
   }
 
   return wrapped;
+}
+
+function rectsIntersect(a, b) {
+  return a.x < b.x + b.w &&
+         a.x + a.w > b.x &&
+         a.y < b.y + b.h &&
+         a.y + a.h > b.y;
 }
 
 // === DRAW HOUSE WITH ROOF, DOOR AND CHIMNEY ===
@@ -261,6 +287,11 @@ let lastCarSpawn = Date.now();
 
 // === DECOR FOR ADDITIONAL MAPS ===
 const forestTrees = [];
+const logs = [];
+const moat = { x: 0, y: canvas.height / 2 - 10, w: canvas.width, h: 20 };
+const bridge = { x: canvas.width / 2 - 20, y: moat.y, w: 40, h: moat.h, built: 0, needed: 3 };
+const axe = { x: bridge.x - 30, y: moat.y + moat.h + 10, w: 8, h: 8, collected: false };
+const inventory = { axe: false, logs: 0 };
 const townBuildings = [];
 const farmPlots = [];
 const campItems = { fire: { x: canvas.width / 2 - 4, y: canvas.height / 2 - 4 } };
@@ -271,6 +302,10 @@ const cows = [];
 const campTents = [];
 const campSmokeParticles = [];
 const campFireParticles = [];
+
+function updateInventory() {
+  inventoryEl.textContent = `Axe: ${inventory.axe ? 'Yes' : 'No'} | Logs: ${inventory.logs}`;
+}
 
 function generateTownNPCs() {
   const sayings = [
@@ -334,11 +369,13 @@ function generateCampNPCs() {
 }
 
 function generateForestTrees() {
-  for (let i = 0; i < 12; i++) {
-    forestTrees.push({
-      x: Math.random() * (canvas.width - 8),
-      y: Math.random() * (canvas.height - 30)
-    });
+  const positions = [
+    { x: 40, y: 140 },
+    { x: 80, y: 150 },
+    { x: 60, y: 120 }
+  ];
+  for (const p of positions) {
+    forestTrees.push({ x: p.x, y: p.y, hits: 0, chopped: false });
   }
 }
 
@@ -374,6 +411,7 @@ generateFarmPlots();
 generateTownNPCs();
 generateFarmNPCs();
 generateCampNPCs();
+updateInventory();
 
 const HEART_SPAWN_INTERVAL = 500;
 let showMessage = '';
@@ -730,14 +768,34 @@ function drawOutdoorWorld() {
 function drawForestWorld() {
   ctx.fillStyle = '#116611';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#2244aa';
+  ctx.fillRect(moat.x, moat.y, moat.w, moat.h);
+  ctx.strokeStyle = '#8B4513';
+  ctx.strokeRect(bridge.x, bridge.y, bridge.w, bridge.h);
+  ctx.fillStyle = '#8B4513';
+  const bw = (bridge.w / bridge.needed) * bridge.built;
+  ctx.fillRect(bridge.x, bridge.y, bw, bridge.h);
   ctx.fillStyle = '#444';
   ctx.fillRect(140, canvas.height - 20, 20, 20);
+  if (!axe.collected) {
+    ctx.fillStyle = '#8B4513';
+    ctx.fillRect(axe.x, axe.y, axe.w, axe.h);
+    ctx.fillStyle = '#ccc';
+    ctx.fillRect(axe.x + 2, axe.y - 4, 2, 4);
+    ctx.fillStyle = '#666';
+    ctx.fillRect(axe.x + 1, axe.y - 6, 4, 2);
+  }
   ctx.fillStyle = '#228B22';
   for (const t of forestTrees) {
+    if (t.chopped) continue;
     ctx.fillRect(t.x, t.y, 8, 10);
     ctx.fillStyle = '#8B4513';
     ctx.fillRect(t.x + 3, t.y + 10, 2, 4);
     ctx.fillStyle = '#228B22';
+  }
+  ctx.fillStyle = '#8B4513';
+  for (const log of logs) {
+    ctx.fillRect(log.x, log.y, log.w, log.h);
   }
 }
 
@@ -1068,6 +1126,33 @@ function checkInteractions() {
       setTimeout(() => flowerPopup.style.opacity = 0, 2000);
       updateDialogue();
     }
+  } else if (scene.current === 'forest') {
+    if (!axe.collected && rectsIntersect(player, axe)) {
+      axe.collected = true;
+      inventory.axe = true;
+      if (pickupSound) {
+        pickupSound.currentTime = 0;
+        pickupSound.play().catch(() => {});
+      }
+      updateInventory();
+    }
+    for (let i = logs.length - 1; i >= 0; i--) {
+      const log = logs[i];
+      if (rectsIntersect(player, log)) {
+        logs.splice(i, 1);
+        inventory.logs++;
+        if (pickupSound) {
+          pickupSound.currentTime = 0;
+          pickupSound.play().catch(() => {});
+        }
+        updateInventory();
+      }
+    }
+    if (rectsIntersect(player, bridge) && inventory.logs > 0 && bridge.built < bridge.needed) {
+      bridge.built++;
+      inventory.logs--;
+      updateInventory();
+    }
   }
 
   let talked = false;
@@ -1351,10 +1436,20 @@ function gameLoop() {
   }
 
   updateMovement();
+  const prevX = player.x;
+  const prevY = player.y;
   player.x += dx;
   player.y += dy;
   player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
   player.y = Math.max(0, Math.min(canvas.height - player.h, player.y));
+  if (scene.current === 'forest') {
+    const pRect = { x: player.x, y: player.y, w: player.w, h: player.h };
+    const inBridge = pRect.x + pRect.w > bridge.x && pRect.x < bridge.x + bridge.w;
+    if (rectsIntersect(pRect, moat) && (!inBridge || bridge.built < bridge.needed)) {
+      player.x = prevX;
+      player.y = prevY;
+    }
+  }
 
   updateMessageTyping();
   checkInteractions();
